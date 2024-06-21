@@ -10,7 +10,7 @@ on:
     branches: [ "main" ]
     # Publish semver tags as releases.
     tags: [ "v*.*.*" ]
-    paths: [ "cmd/**", "internal/**", "abi/**", ".github/workflows/**" ]
+    paths: [ "cmd/**", "internal/**", "abi/**", ".github/workflows/**", "Dockerfile" ]
   # pull_request:
   #   branches: [ "main" ]
 
