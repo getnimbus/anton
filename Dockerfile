@@ -44,7 +44,7 @@ COPY abi /go/src/github.com/getnimbus/anton/abi
 COPY internal /go/src/github.com/getnimbus/anton/internal
 COPY main.go /go/src/github.com/getnimbus/anton
 
-RUN rm /go/pkg/mod/github.com/tonkeeper/tongo@v1.3.0/lib/linux/libemulator.so
+# RUN rm /go/pkg/mod/github.com/tonkeeper/tongo@v1.3.0/lib/linux/libemulator.so
 COPY --from=emulator-builder /output/libemulator.so /lib/libemulator.so
 
 RUN swag init \
@@ -71,4 +71,5 @@ COPY --from=builder /anton /usr/bin/anton
 
 USER anton:anton
 EXPOSE 8080
-ENTRYPOINT ["/usr/bin/anton"]
+# ENTRYPOINT ["/usr/bin/anton"]
+CMD ["/usr/bin/anton", "indexer", "--contracts-dir", "/var/anton/known"]
