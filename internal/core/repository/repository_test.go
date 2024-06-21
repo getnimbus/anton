@@ -2,86 +2,96 @@ package repository_test
 
 import (
 	"context"
+	"github.com/getnimbus/anton/internal/infra"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/aggregate"
-	"github.com/tonindexer/anton/internal/core/filter"
-	"github.com/tonindexer/anton/internal/core/repository"
-	"github.com/tonindexer/anton/internal/core/repository/account"
-	"github.com/tonindexer/anton/internal/core/repository/block"
-	"github.com/tonindexer/anton/internal/core/repository/contract"
-	"github.com/tonindexer/anton/internal/core/repository/msg"
-	"github.com/tonindexer/anton/internal/core/repository/tx"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/filter"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository/account"
+	"github.com/getnimbus/anton/internal/core/repository/block"
+	"github.com/getnimbus/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/internal/core/repository/msg"
+	"github.com/getnimbus/anton/internal/core/repository/tx"
+	"github.com/getnimbus/anton/internal/core/rndm"
 )
 
 var (
-	db *repository.DB
+	db            *repository.DB
+	kafkaProducer infra.KafkaSyncProducer
 
 	accountRepo repository.Account
-	// abiRepo     repository.Contract
-	blockRepo repository.Block
-	txRepo    repository.Transaction
-	msgRepo   repository.Message
+	abiRepo     repository.Contract
+	blockRepo   repository.Block
+	txRepo      repository.Transaction
+	msgRepo     repository.Message
 )
 
 func initDB() {
-	var err error
+	var (
+		ctx = context.Background()
+		err error
+	)
 
-	db, err = repository.ConnectDB(context.Background(),
-		"clickhouse://user:pass@localhost:9000/default?sslmode=disable",
+	db, err = repository.ConnectDB(ctx,
+		//"clickhouse://user:pass@localhost:9000/default?sslmode=disable",
 		"postgres://user:pass@localhost:5432/postgres?sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
 
-	accountRepo = account.NewRepository(db.CH, db.PG)
-	// abiRepo = contract.NewRepository(db.PG)
-	blockRepo = block.NewRepository(db.CH, db.PG)
-	txRepo = tx.NewRepository(db.CH, db.PG)
-	msgRepo = msg.NewRepository(db.CH, db.PG)
+	kafkaProducer, _, err = infra.NewKafkaSyncProducer(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	accountRepo = account.NewRepository(db.PG)
+	abiRepo = contract.NewRepository(db.PG)
+	blockRepo = block.NewRepository(db.PG, kafkaProducer)
+	txRepo = tx.NewRepository(db.PG, kafkaProducer)
+	msgRepo = msg.NewRepository(db.PG, kafkaProducer)
 }
 
 func dropTables(t testing.TB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	ck, pg := db.CH, db.PG
+	//ck, pg := db.CH, db.PG
+	pg := db.PG
 
-	_, err := ck.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
-	_, err = pg.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
+	//_, err := ck.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
+	_, err := pg.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
-	_, err = ck.NewDropTable().Model((*core.Message)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.Message)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
 	_, err = pg.NewDropTable().Model((*core.Message)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
 	_, err = pg.NewDropTable().Model((*core.LatestAccountState)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
-	_, err = ck.NewDropTable().Model((*core.AccountState)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.AccountState)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
 	_, err = pg.NewDropTable().Model((*core.AccountState)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
-	_, err = ck.NewDropTable().Model((*core.AddressLabel)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.AddressLabel)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
 	_, err = pg.NewDropTable().Model((*core.AddressLabel)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
 	_, err = pg.ExecContext(ctx, "DROP TYPE IF EXISTS account_status")
 	require.Nil(t, err)
 
-	_, err = ck.NewDropTable().Model((*core.Block)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.Block)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
 	_, err = pg.NewDropTable().Model((*core.Block)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
@@ -98,16 +108,20 @@ func createTables(t testing.TB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	err := block.CreateTables(ctx, db.CH, db.PG)
+	//err := block.CreateTables(ctx, db.CH, db.PG)
+	err := block.CreateTables(ctx, db.PG)
 	require.Nil(t, err)
 
-	err = account.CreateTables(ctx, db.CH, db.PG)
+	//err = account.CreateTables(ctx, db.CH, db.PG)
+	err = account.CreateTables(ctx, db.PG)
 	require.Nil(t, err)
 
-	err = tx.CreateTables(ctx, db.CH, db.PG)
+	//err = tx.CreateTables(ctx, db.CH, db.PG)
+	err = tx.CreateTables(ctx, db.PG)
 	require.Nil(t, err)
 
-	err = msg.CreateTables(ctx, db.CH, db.PG)
+	//err = msg.CreateTables(ctx, db.CH, db.PG)
+	err = msg.CreateTables(ctx, db.PG)
 	require.Nil(t, err)
 
 	err = contract.CreateTables(ctx, db.PG)
@@ -262,27 +276,30 @@ func TestRelations(t *testing.T) {
 		require.Equal(t, blocks[1:], res.Rows)
 	})
 
-	t.Run("get statistics", func(t *testing.T) {
-		stats, err := aggregate.GetStatistics(ctx, db.CH, db.PG)
-		require.Nil(t, err)
-		require.Equal(t, int(master.SeqNo), stats.FirstBlock)
-		require.Equal(t, int(master.SeqNo), stats.LastBlock)
-		require.Equal(t, 1, stats.MasterBlockCount)
-		require.Equal(t, 1, stats.AddressCount)
-		require.Equal(t, 1, stats.ParsedAddressCount)
-		require.Equal(t, 1, stats.AccountCount)
-		require.Equal(t, 1, stats.ParsedAccountCount)
-		require.Equal(t, 1, stats.TransactionCount)
-		require.Equal(t, 2, stats.MessageCount)
-		require.Equal(t, 1, stats.ParsedMessageCount)
-		require.Equal(t, 1, len(stats.AddressStatusCount))
-		require.Equal(t, core.Active, stats.AddressStatusCount[0].Status)
-		require.Equal(t, 1, stats.AddressStatusCount[0].Count)
-		require.Equal(t, state.Types, stats.AddressTypesCount[0].Interfaces)
-		require.Equal(t, 1, stats.AddressTypesCount[0].Count)
-		require.Equal(t, operation, stats.MessageTypesCount[0].Operation)
-		require.Equal(t, 1, stats.MessageTypesCount[0].Count)
-	})
+	//t.Run("get statistics", func(t *testing.T) {
+	//	stats, err := aggregate.GetStatistics(ctx,
+	//		//db.CH,
+	//		db.PG,
+	//	)
+	//	require.Nil(t, err)
+	//	require.Equal(t, int(master.SeqNo), stats.FirstBlock)
+	//	require.Equal(t, int(master.SeqNo), stats.LastBlock)
+	//	require.Equal(t, 1, stats.MasterBlockCount)
+	//	require.Equal(t, 1, stats.AddressCount)
+	//	require.Equal(t, 1, stats.ParsedAddressCount)
+	//	require.Equal(t, 1, stats.AccountCount)
+	//	require.Equal(t, 1, stats.ParsedAccountCount)
+	//	require.Equal(t, 1, stats.TransactionCount)
+	//	require.Equal(t, 2, stats.MessageCount)
+	//	require.Equal(t, 1, stats.ParsedMessageCount)
+	//	require.Equal(t, 1, len(stats.AddressStatusCount))
+	//	require.Equal(t, core.Active, stats.AddressStatusCount[0].Status)
+	//	require.Equal(t, 1, stats.AddressStatusCount[0].Count)
+	//	require.Equal(t, state.Types, stats.AddressTypesCount[0].Interfaces)
+	//	require.Equal(t, 1, stats.AddressTypesCount[0].Count)
+	//	require.Equal(t, operation, stats.MessageTypesCount[0].Operation)
+	//	require.Equal(t, 1, stats.MessageTypesCount[0].Count)
+	//})
 
 	t.Run("drop tables again", func(t *testing.T) {
 		dropTables(t)

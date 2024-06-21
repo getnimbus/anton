@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/abi/known"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/abi/known"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 var ctx = context.Background()

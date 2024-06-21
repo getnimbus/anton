@@ -11,13 +11,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/aggregate"
-	"github.com/tonindexer/anton/internal/core/aggregate/history"
-	"github.com/tonindexer/anton/internal/core/filter"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/aggregate"
+	"github.com/getnimbus/anton/internal/core/aggregate/history"
+	"github.com/getnimbus/anton/internal/core/filter"
 )
 
 // @title      		Anton

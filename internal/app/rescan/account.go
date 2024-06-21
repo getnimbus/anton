@@ -8,11 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/abi/known"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/abi/known"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 func (s *Service) getRecentAccountState(ctx context.Context, a addr.Address, lastLT uint64) (*core.AccountState, error) {

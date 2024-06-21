@@ -1,10 +1,10 @@
 package repository
 
 import (
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/aggregate"
-	"github.com/tonindexer/anton/internal/core/aggregate/history"
-	"github.com/tonindexer/anton/internal/core/filter"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/aggregate"
+	"github.com/getnimbus/anton/internal/core/aggregate/history"
+	"github.com/getnimbus/anton/internal/core/filter"
 )
 
 type Block interface {

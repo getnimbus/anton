@@ -14,42 +14,47 @@ import (
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 
-	"github.com/uptrace/go-clickhouse/ch"
-
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository/account"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository/account"
+	"github.com/getnimbus/anton/internal/core/rndm"
 )
 
 var (
-	ck   *ch.DB
+	//ck   *ch.DB
 	pg   *bun.DB
 	repo *account.Repository
 )
 
 func initdb(t testing.TB) {
 	var (
-		dsnCH = "clickhouse://user:pass@localhost:9000/default?sslmode=disable"
+		//dsnCH = "clickhouse://user:pass@localhost:9000/default?sslmode=disable"
 		dsnPG = "postgres://user:pass@localhost:5432/postgres?sslmode=disable"
 		err   error
 	)
 
-	ctx := context.Background()
-
-	ck = ch.Connect(ch.WithDSN(dsnCH), ch.WithAutoCreateDatabase(true), ch.WithPoolSize(16))
-	err = ck.Ping(ctx)
-	require.Nil(t, err)
+	//ctx := context.Background()
+	//
+	//ck = ch.Connect(ch.WithDSN(dsnCH), ch.WithAutoCreateDatabase(true), ch.WithPoolSize(16))
+	//err = ck.Ping(ctx)
+	//require.Nil(t, err)
 
 	pg = bun.NewDB(sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsnPG))), pgdialect.New())
 	err = pg.Ping()
 	require.Nil(t, err)
 
-	repo = account.NewRepository(ck, pg)
+	repo = account.NewRepository(
+		//ck,
+		pg,
+	)
 }
 
 func createTables(t testing.TB) {
-	err := account.CreateTables(context.Background(), ck, pg)
+	err := account.CreateTables(
+		context.Background(),
+		//ck,
+		pg,
+	)
 	require.Nil(t, err)
 }
 
@@ -60,18 +65,18 @@ func dropTables(t testing.TB) {
 	_, err := pg.NewDropTable().Model((*core.LatestAccountState)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
-	_, err = ck.NewDropTable().Model((*core.AccountStateCode)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
-	_, err = ck.NewDropTable().Model((*core.AccountStateData)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
-
-	_, err = ck.NewDropTable().Model((*core.AccountState)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.AccountStateCode)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.AccountStateData)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
+	//
+	//_, err = ck.NewDropTable().Model((*core.AccountState)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
 	_, err = pg.NewDropTable().Model((*core.AccountState)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
-	_, err = ck.NewDropTable().Model((*core.AddressLabel)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.AddressLabel)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
 	_, err = pg.NewDropTable().Model((*core.AddressLabel)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
@@ -110,8 +115,8 @@ func TestRepository_AddAccounts(t *testing.T) {
 		got.Code, got.Data = states[0].Code, states[0].Data
 		require.Equal(t, states[0], got)
 
-		err = ck.NewSelect().Model(got).Where("address = ?", a).Where("last_tx_lt = ?", states[0].LastTxLT).Scan(ctx)
-		require.Nil(t, err)
+		//err = ck.NewSelect().Model(got).Where("address = ?", a).Where("last_tx_lt = ?", states[0].LastTxLT).Scan(ctx)
+		//require.Nil(t, err)
 		got.Code, got.Data = states[0].Code, states[0].Data
 		got.UpdatedAt = states[0].UpdatedAt // TODO: look at time.Time ch unmarshal
 		require.Equal(t, states[0], got)
@@ -137,8 +142,8 @@ func TestRepository_AddAccounts(t *testing.T) {
 		got.Code, got.Data = states[0].Code, states[0].Data
 		require.Equal(t, states[0], got)
 
-		err = ck.NewSelect().Model(got).Where("address = ?", a).Where("last_tx_lt = ?", states[0].LastTxLT).Scan(ctx)
-		require.Nil(t, err)
+		//err = ck.NewSelect().Model(got).Where("address = ?", a).Where("last_tx_lt = ?", states[0].LastTxLT).Scan(ctx)
+		//require.Nil(t, err)
 		got.Code, got.Data = states[0].Code, states[0].Data
 		got.UpdatedAt = states[0].UpdatedAt // TODO: look at time.Time ch unmarshal
 		require.Equal(t, states[0], got)

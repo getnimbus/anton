@@ -2,13 +2,9 @@ package msg
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/pkg/errors"
 	"github.com/uptrace/go-clickhouse/ch"
 
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/aggregate/history"
+	"github.com/getnimbus/anton/internal/core/aggregate/history"
 )
 
 func addMessagesHistoryFilters(q *ch.SelectQuery, req *history.MessagesReq) *ch.SelectQuery {
@@ -40,45 +36,46 @@ func addMessagesHistoryFilters(q *ch.SelectQuery, req *history.MessagesReq) *ch.
 }
 
 func (r *Repository) AggregateMessagesHistory(ctx context.Context, req *history.MessagesReq) (*history.MessagesRes, error) {
-	var res history.MessagesRes
-	var bigIntRes bool // do we need to count account_data or account_states
-
-	q := addMessagesHistoryFilters(r.ch.NewSelect().Model((*core.Message)(nil)), req)
-
-	switch req.Metric {
-	case history.MessageCount:
-		q = q.ColumnExpr("count() as value")
-	case history.MessageAmountSum:
-		q, bigIntRes = q.ColumnExpr("sum(amount) as value"), true
-	default:
-		return nil, errors.Wrapf(core.ErrInvalidArg, "invalid message metric %s", req.Metric)
-	}
-
-	rounding, err := history.GetRoundingFunction(req.Interval)
-	if err != nil {
-		return nil, err
-	}
-	q = q.ColumnExpr(fmt.Sprintf(rounding, "created_at") + " as timestamp")
-	q = q.Group("timestamp")
-
-	if !req.From.IsZero() {
-		q = q.Where("created_at > ?", req.From)
-	}
-	if !req.To.IsZero() {
-		q = q.Where("created_at < ?", req.To)
-	}
-
-	q = q.Order("timestamp ASC")
-
-	if bigIntRes {
-		if err := q.Scan(ctx, &res.BigIntRes); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := q.Scan(ctx, &res.CountRes); err != nil {
-			return nil, err
-		}
-	}
-
-	return &res, nil
+	//var res history.MessagesRes
+	//var bigIntRes bool // do we need to count account_data or account_states
+	//
+	//q := addMessagesHistoryFilters(r.ch.NewSelect().Model((*core.Message)(nil)), req)
+	//
+	//switch req.Metric {
+	//case history.MessageCount:
+	//	q = q.ColumnExpr("count() as value")
+	//case history.MessageAmountSum:
+	//	q, bigIntRes = q.ColumnExpr("sum(amount) as value"), true
+	//default:
+	//	return nil, errors.Wrapf(core.ErrInvalidArg, "invalid message metric %s", req.Metric)
+	//}
+	//
+	//rounding, err := history.GetRoundingFunction(req.Interval)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//q = q.ColumnExpr(fmt.Sprintf(rounding, "created_at") + " as timestamp")
+	//q = q.Group("timestamp")
+	//
+	//if !req.From.IsZero() {
+	//	q = q.Where("created_at > ?", req.From)
+	//}
+	//if !req.To.IsZero() {
+	//	q = q.Where("created_at < ?", req.To)
+	//}
+	//
+	//q = q.Order("timestamp ASC")
+	//
+	//if bigIntRes {
+	//	if err := q.Scan(ctx, &res.BigIntRes); err != nil {
+	//		return nil, err
+	//	}
+	//} else {
+	//	if err := q.Scan(ctx, &res.CountRes); err != nil {
+	//		return nil, err
+	//	}
+	//}
+	//
+	//return &res, nil
+	return nil, nil
 }

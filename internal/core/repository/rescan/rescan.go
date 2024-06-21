@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 var _ core.RescanRepository = (*Repository)(nil)

@@ -9,9 +9,9 @@ import (
 
 	"github.com/uptrace/bun/extra/bunbig"
 
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core/aggregate"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core/aggregate"
+	"github.com/getnimbus/anton/internal/core/rndm"
 )
 
 func TestRepository_AggregateMessages(t *testing.T) {

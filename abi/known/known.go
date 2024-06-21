@@ -1,6 +1,6 @@
 package known
 
-import "github.com/tonindexer/anton/abi"
+import "github.com/getnimbus/anton/abi"
 
 var (
 	NFTCollection abi.ContractName = "nft_collection"

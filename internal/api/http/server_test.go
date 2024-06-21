@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/app/query"
-	"github.com/tonindexer/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/app/query"
+	"github.com/getnimbus/anton/internal/core/repository"
 )
 
 var _testService *query.Service

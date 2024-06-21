@@ -1,28 +1,33 @@
 package main
 
 import (
+	"fmt"
+	"github.com/getnimbus/anton/internal/conf"
 	"os"
-
-	"github.com/allisson/go-env"
-	"github.com/urfave/cli/v2"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/urfave/cli/v2"
 
-	"github.com/tonindexer/anton/cmd/archive"
-	"github.com/tonindexer/anton/cmd/contract"
-	"github.com/tonindexer/anton/cmd/db"
-	"github.com/tonindexer/anton/cmd/indexer"
-	"github.com/tonindexer/anton/cmd/label"
-	"github.com/tonindexer/anton/cmd/rescan"
-	"github.com/tonindexer/anton/cmd/web"
+	"github.com/getnimbus/anton/cmd/archive"
+	"github.com/getnimbus/anton/cmd/contract"
+	"github.com/getnimbus/anton/cmd/db"
+	"github.com/getnimbus/anton/cmd/indexer"
+	"github.com/getnimbus/anton/cmd/label"
+	"github.com/getnimbus/anton/cmd/rescan"
+	"github.com/getnimbus/anton/cmd/web"
 )
 
 func init() {
+	// load env
+	if err := conf.LoadConfig("."); err != nil {
+		panic(fmt.Errorf("cannot load config: %v", err))
+	}
+
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	level := zerolog.InfoLevel
-	if env.GetBool("DEBUG_LOGS", false) {
+	if conf.Config.IsDebug() {
 		level = zerolog.DebugLevel
 	}
 

@@ -10,8 +10,8 @@ import (
 	"github.com/xssnick/tonutils-go/ton"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 func MapAccount(b *ton.BlockIDExt, acc *tlb.Account) *core.AccountState {

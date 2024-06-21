@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
 )
 
 func TestService_getAccountLibraries(t *testing.T) {

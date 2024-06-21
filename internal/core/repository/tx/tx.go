@@ -2,24 +2,34 @@ package tx
 
 import (
 	"context"
+	"github.com/getnimbus/anton/internal/conf"
 
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/go-clickhouse/ch"
 
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/infra"
 )
 
 var _ repository.Transaction = (*Repository)(nil)
 
 type Repository struct {
-	ch *ch.DB
-	pg *bun.DB
+	//ch *ch.DB
+	pg            *bun.DB
+	kafkaProducer infra.KafkaSyncProducer
 }
 
-func NewRepository(ck *ch.DB, pg *bun.DB) *Repository {
-	return &Repository{ch: ck, pg: pg}
+func NewRepository(
+	//ck *ch.DB,
+	pg *bun.DB,
+	kafkaProducer infra.KafkaSyncProducer,
+) *Repository {
+	return &Repository{
+		//ch: ck,
+		pg:            pg,
+		kafkaProducer: kafkaProducer,
+	}
 }
 
 func createIndexes(ctx context.Context, pgDB *bun.DB) error {
@@ -74,17 +84,21 @@ func createIndexes(ctx context.Context, pgDB *bun.DB) error {
 	return nil
 }
 
-func CreateTables(ctx context.Context, chDB *ch.DB, pgDB *bun.DB) error {
-	_, err := chDB.NewCreateTable().
-		IfNotExists().
-		Engine("ReplacingMergeTree").
-		Model(&core.Transaction{}).
-		Exec(ctx)
-	if err != nil {
-		return errors.Wrap(err, "transaction ch create table")
-	}
+func CreateTables(
+	ctx context.Context,
+	//chDB *ch.DB,
+	pgDB *bun.DB,
+) error {
+	//_, err := chDB.NewCreateTable().
+	//	IfNotExists().
+	//	Engine("ReplacingMergeTree").
+	//	Model(&core.Transaction{}).
+	//	Exec(ctx)
+	//if err != nil {
+	//	return errors.Wrap(err, "transaction ch create table")
+	//}
 
-	_, err = pgDB.NewCreateTable().
+	_, err := pgDB.NewCreateTable().
 		Model(&core.Transaction{}).
 		IfNotExists().
 		// ForeignKey(`(in_msg_hash) REFERENCES messages(hash)`). // TODO: fix tests with fk
@@ -105,15 +119,22 @@ func (r *Repository) AddTransactions(ctx context.Context, tx bun.Tx, transaction
 		return nil
 	}
 
-	_, err := tx.NewInsert().Model(&transactions).Exec(ctx)
-	if err != nil {
-		return err
+	for _, t := range transactions {
+		if err := r.kafkaProducer.SendJson(ctx, conf.Config.TonTxsTopic, t); err != nil {
+			return err
+		}
 	}
 
-	_, err = r.ch.NewInsert().Model(&transactions).Exec(ctx)
-	if err != nil {
-		return err
-	}
+	//_, err := tx.NewInsert().Model(&transactions).Exec(ctx)
+	//if err != nil {
+	//	return err
+	//}
+
+	// clickhouse insert
+	//_, err = r.ch.NewInsert().Model(&transactions).Exec(ctx)
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }

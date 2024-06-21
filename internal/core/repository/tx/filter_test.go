@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/filter"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/filter"
+	"github.com/getnimbus/anton/internal/core/rndm"
 )
 
 func TestRepository_FilterTransactions(t *testing.T) {

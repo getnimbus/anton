@@ -6,7 +6,7 @@ import (
 
 	"github.com/uptrace/bun/extra/bunbig"
 
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/addr"
 )
 
 type MessagesReq struct {

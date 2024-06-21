@@ -16,8 +16,8 @@ resolver:
   filename_template: "{name}.resolvers.go"
 
 autobind:
-  - "github.com/tonindexer/anton/internal/api/graphql/models"
-  - "github.com/tonindexer/anton/internal/core"
+  - "github.com/getnimbus/anton/internal/api/graphql/models"
+  - "github.com/getnimbus/anton/internal/core"
 
 models:
   Int:

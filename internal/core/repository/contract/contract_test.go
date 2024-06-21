@@ -13,12 +13,12 @@ import (
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/abi/known"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository/contract"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/abi/known"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/internal/core/rndm"
 )
 
 var (

@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"time"
@@ -9,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 func (s *Service) insertData(
@@ -99,6 +100,9 @@ func (s *Service) uniqAccounts(transactions []*core.Transaction) []*core.Account
 
 	for _, accounts := range uniqAcc {
 		for _, a := range accounts {
+			if len(a.LastTxHash) > 0 {
+				a.LastTxHashHex = hex.EncodeToString(a.LastTxHash)
+			}
 			ret = append(ret, a)
 		}
 	}
@@ -147,18 +151,18 @@ func (s *Service) getMessageSource(ctx context.Context, msg *core.Message) (skip
 		return false
 	}
 
-	blocks, err := s.blockRepo.CountMasterBlocks(ctx)
-	if err != nil {
-		panic(errors.Wrap(err, "count masterchain blocks"))
-	}
-	if blocks < 1000 {
-		log.Debug().
-			Hex("dst_tx_hash", msg.DstTxHash).
-			Int32("dst_workchain", msg.DstWorkchain).Int64("dst_shard", msg.DstShard).Uint32("dst_block_seq_no", msg.DstBlockSeqNo).
-			Str("src_address", msg.SrcAddress.String()).Str("dst_address", msg.DstAddress.String()).
-			Msg("cannot find source message")
-		return true
-	}
+	//blocks, err := s.blockRepo.CountMasterBlocks(ctx)
+	//if err != nil {
+	//	panic(errors.Wrap(err, "count masterchain blocks"))
+	//}
+	//if blocks < 1000 {
+	//	log.Debug().
+	//		Hex("dst_tx_hash", msg.DstTxHash).
+	//		Int32("dst_workchain", msg.DstWorkchain).Int64("dst_shard", msg.DstShard).Uint32("dst_block_seq_no", msg.DstBlockSeqNo).
+	//		Str("src_address", msg.SrcAddress.String()).Str("dst_address", msg.DstAddress.String()).
+	//		Msg("cannot find source message")
+	//	return true
+	//}
 
 	panic(fmt.Errorf("unknown source of message with dst tx hash %x on block (%d, %d, %d) from %s to %s",
 		msg.DstTxHash, msg.DstWorkchain, msg.DstShard, msg.DstBlockSeqNo, msg.SrcAddress.String(), msg.DstAddress.String()))
@@ -186,6 +190,15 @@ func (s *Service) uniqMessages(ctx context.Context, transactions []*core.Transac
 				continue
 			}
 		}
+		if len(msg.Hash) > 0 {
+			msg.HashHex = hex.EncodeToString(msg.Hash)
+		}
+		if len(msg.SrcTxHash) > 0 {
+			msg.SrcTxHashHex = hex.EncodeToString(msg.SrcTxHash)
+		}
+		if len(msg.DstTxHash) > 0 {
+			msg.DstTxHashHex = hex.EncodeToString(msg.DstTxHash)
+		}
 
 		ret = append(ret, msg)
 	}
@@ -200,7 +213,25 @@ func (s *Service) saveBlock(ctx context.Context, master *core.Block) {
 
 	var newTransactions []*core.Transaction
 	for i := range newBlocks {
+		for _, tx := range newBlocks[i].Transactions {
+			if len(tx.Hash) > 0 {
+				tx.HashHex = hex.EncodeToString(tx.Hash)
+			}
+			if len(tx.PrevTxHash) > 0 {
+				tx.PrevTxHashHex = hex.EncodeToString(tx.PrevTxHash)
+			}
+			if len(tx.InMsgHash) > 0 {
+				tx.InMsgHashHex = hex.EncodeToString(tx.InMsgHash)
+			}
+		}
 		newTransactions = append(newTransactions, newBlocks[i].Transactions...)
+
+		if len(newBlocks[i].FileHash) > 0 {
+			newBlocks[i].FileHashHex = hex.EncodeToString(newBlocks[i].FileHash)
+		}
+		if len(newBlocks[i].RootHash) > 0 {
+			newBlocks[i].RootHashHex = hex.EncodeToString(newBlocks[i].RootHash)
+		}
 	}
 
 	if err := s.insertData(ctx, s.uniqAccounts(newTransactions), s.uniqMessages(ctx, newTransactions), newTransactions, newBlocks); err != nil {

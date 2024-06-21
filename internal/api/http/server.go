@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 
-	_ "github.com/tonindexer/anton/api/http"
+	_ "github.com/getnimbus/anton/api/http"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"

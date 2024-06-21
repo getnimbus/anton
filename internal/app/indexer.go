@@ -3,11 +3,14 @@ package app
 import (
 	"github.com/xssnick/tonutils-go/ton"
 
-	"github.com/tonindexer/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/infra"
 )
 
 type IndexerConfig struct {
 	DB *repository.DB
+
+	PRODUCER infra.KafkaSyncProducer
 
 	API ton.APIClientWrapped
 

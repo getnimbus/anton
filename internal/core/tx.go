@@ -2,24 +2,26 @@ package core
 
 import (
 	"context"
+	"encoding/hex"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/extra/bunbig"
-	"github.com/uptrace/go-clickhouse/ch"
 	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/addr"
 )
 
 type Transaction struct {
-	ch.CHModel    `ch:"transactions,partition:toYYYYMM(created_at)" json:"-"`
+	//ch.CHModel    `ch:"transactions,partition:toYYYYMM(created_at)" json:"-"`
 	bun.BaseModel `bun:"table:transactions" json:"-"`
 
-	Address   addr.Address  `ch:"type:String,pk" bun:"type:bytea" json:"address"`
-	Hash      []byte        `bun:"type:bytea,pk,notnull" json:"hash"`
+	Address addr.Address `ch:"type:String,pk" bun:"type:bytea" json:"address"`
+	Hash    []byte       `bun:"type:bytea,pk,notnull" json:"hash"`
+	HashHex string       `ch:"-" bun:"-" json:"hash_hex"`
+
 	CreatedLT uint64        `ch:",pk" bun:",notnull" json:"created_lt"`
 	Account   *AccountState `ch:"-" bun:"rel:has-one,join:address=address,join:created_lt=last_tx_lt" json:"account"`
 
@@ -27,12 +29,14 @@ type Transaction struct {
 	Shard      int64  `bun:"type:bigint,notnull" json:"shard"`
 	BlockSeqNo uint32 `bun:"type:integer,notnull" json:"block_seq_no"`
 
-	PrevTxHash []byte `bun:"type:bytea" json:"prev_tx_hash,omitempty"`
-	PrevTxLT   uint64 `json:"prev_tx_lt,omitempty"`
+	PrevTxHash    []byte `bun:"type:bytea" json:"prev_tx_hash,omitempty"`
+	PrevTxHashHex string `ch:"-" bun:"-" json:"prev_tx_hash_hex,omitempty"`
+	PrevTxLT      uint64 `json:"prev_tx_lt,omitempty"`
 
-	InMsgHash []byte      `json:"in_msg_hash"`
-	InMsg     *Message    `ch:"-" bun:"rel:belongs-to,join:in_msg_hash=hash" json:"in_msg"`
-	InAmount  *bunbig.Int `ch:"type:UInt256" bun:"type:numeric,notnull" json:"in_amount,omitempty"`
+	InMsgHash    []byte      `json:"in_msg_hash"`
+	InMsgHashHex string      `ch:"-" bun:"-" json:"in_msg_hash_hex"`
+	InMsg        *Message    `ch:"-" bun:"rel:belongs-to,join:in_msg_hash=hash" json:"in_msg"`
+	InAmount     *bunbig.Int `ch:"type:UInt256" bun:"type:numeric,notnull" json:"in_amount,omitempty"`
 
 	OutMsg      []*Message  `ch:"-" bun:"rel:has-many,join:address=src_address,join:created_lt=src_tx_lt" json:"out_msg,omitempty"`
 	OutMsgCount uint16      `bun:",notnull" json:"out_msg_count"`
@@ -66,6 +70,10 @@ func (tx *Transaction) LoadDescription() error { // TODO: optionally load descri
 	tx.DescriptionLoaded = d
 
 	return nil
+}
+
+func (tx *Transaction) PartitionKey() string {
+	return hex.EncodeToString(tx.Hash)
 }
 
 type TransactionRepository interface {

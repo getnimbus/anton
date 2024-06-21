@@ -9,8 +9,8 @@ import (
 
 	"github.com/xssnick/tonutils-go/address"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
 )
 
 func TestGetMethodDesc_Wallets(t *testing.T) {

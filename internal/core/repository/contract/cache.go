@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 var cacheInvalidation = 10 * time.Second

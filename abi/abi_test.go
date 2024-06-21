@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tonindexer/anton/abi"
+	"github.com/getnimbus/anton/abi"
 )
 
 func mustBase64(t *testing.T, str string) []byte {

@@ -3,7 +3,7 @@ package filter
 import (
 	"context"
 
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 type BlocksReq struct {

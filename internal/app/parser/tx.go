@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/abi/known"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/abi/known"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 func parseOperationAttempt(msg *core.Message, op *core.ContractOperation) error {

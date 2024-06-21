@@ -2,16 +2,16 @@ package core
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"time"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/extra/bunbig"
-	"github.com/uptrace/go-clickhouse/ch"
 	"github.com/xssnick/tonutils-go/tlb"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
 )
 
 type MessageType string
@@ -23,12 +23,13 @@ const (
 )
 
 type Message struct {
-	ch.CHModel    `ch:"messages,partition:toYYYYMM(created_at)" json:"-"`
+	//ch.CHModel    `ch:"messages,partition:toYYYYMM(created_at)" json:"-"`
 	bun.BaseModel `bun:"table:messages" json:"-"`
 
 	Type MessageType `ch:",lc" bun:"type:message_type,notnull" json:"type"` // TODO: ch enum
 
-	Hash []byte `ch:",pk" bun:"type:bytea,pk,notnull"  json:"hash"`
+	Hash    []byte `ch:",pk" bun:"type:bytea,pk,notnull"  json:"hash"`
+	HashHex string `ch:"-" bun:"-" json:"hash_hex"`
 
 	// TODO: migrate src/dst blocks to nullable fields
 	// TODO: null addresses in clickhouse
@@ -36,6 +37,7 @@ type Message struct {
 	SrcAddress    addr.Address  `ch:"type:String" bun:"type:bytea,nullzero" json:"src_address,omitempty"`
 	SrcTxLT       uint64        `bun:",nullzero" json:"src_tx_lt,omitempty"`
 	SrcTxHash     []byte        `ch:"-" bun:"-" json:"src_tx_hash,omitempty"`
+	SrcTxHashHex  string        `ch:"-" bun:"-" json:"src_tx_hash_hex,omitempty"`
 	SrcWorkchain  int32         `bun:"type:integer,notnull" json:"src_workchain"`
 	SrcShard      int64         `bun:"type:bigint,notnull" json:"src_shard"`
 	SrcBlockSeqNo uint32        `bun:"type:integer,notnull" json:"src_block_seq_no"`
@@ -44,6 +46,7 @@ type Message struct {
 	DstAddress    addr.Address  `ch:"type:String" bun:"type:bytea,nullzero" json:"dst_address,omitempty"`
 	DstTxLT       uint64        `bun:",nullzero" json:"dst_tx_lt,omitempty"`
 	DstTxHash     []byte        `ch:"-" bun:"-" json:"dst_tx_hash,omitempty"`
+	DstTxHashHex  string        `ch:"-" bun:"-" json:"dst_tx_hash_hex,omitempty"`
 	DstWorkchain  int32         `bun:"type:integer,notnull" json:"dst_workchain"`
 	DstShard      int64         `bun:"type:bigint,notnull" json:"dst_shard"`
 	DstBlockSeqNo uint32        `bun:"type:integer,notnull" json:"dst_block_seq_no"`
@@ -75,6 +78,10 @@ type Message struct {
 
 	CreatedAt time.Time `bun:"type:timestamp without time zone,notnull" json:"created_at"`
 	CreatedLT uint64    `bun:",notnull" json:"created_lt"`
+}
+
+func (m *Message) PartitionKey() string {
+	return hex.EncodeToString(m.Hash)
 }
 
 type MessageRepository interface {

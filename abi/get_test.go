@@ -13,7 +13,7 @@ import (
 	"github.com/xssnick/tonutils-go/ton/nft"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/abi"
+	"github.com/getnimbus/anton/abi"
 )
 
 var configCell *cell.Cell // mainnet blockchain config

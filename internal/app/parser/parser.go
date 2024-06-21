@@ -3,7 +3,7 @@ package parser
 import (
 	"encoding/base64"
 
-	"github.com/tonindexer/anton/internal/app"
+	"github.com/getnimbus/anton/internal/app"
 )
 
 var _ app.ParserService = (*Service)(nil)

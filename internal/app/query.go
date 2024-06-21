@@ -5,16 +5,19 @@ import (
 
 	"github.com/xssnick/tonutils-go/ton"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/aggregate"
-	"github.com/tonindexer/anton/internal/core/aggregate/history"
-	"github.com/tonindexer/anton/internal/core/filter"
-	"github.com/tonindexer/anton/internal/core/repository"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/aggregate"
+	"github.com/getnimbus/anton/internal/core/aggregate/history"
+	"github.com/getnimbus/anton/internal/core/filter"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/infra"
 )
 
 type QueryConfig struct {
 	DB *repository.DB
+
+	PRODUCER infra.KafkaSyncProducer
 
 	API ton.APIClientWrapped
 }

@@ -4,11 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/filter"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/go-clickhouse/ch"
-
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/filter"
 )
 
 func (r *Repository) filterMsg(ctx context.Context, req *filter.MessagesReq) (ret []*core.Message, err error) {
@@ -69,38 +67,39 @@ func (r *Repository) filterMsg(ctx context.Context, req *filter.MessagesReq) (re
 }
 
 func (r *Repository) countMsg(ctx context.Context, req *filter.MessagesReq) (int, error) {
-	q := r.ch.NewSelect().
-		Model((*core.Message)(nil))
-
-	if len(req.Hash) > 0 {
-		q = q.Where("hash = ?", req.Hash)
-	}
-	if len(req.SrcAddresses) > 0 {
-		q = q.Where("src_address in (?)", ch.In(req.SrcAddresses))
-	}
-	if len(req.DstAddresses) > 0 {
-		q = q.Where("dst_address in (?)", ch.In(req.DstAddresses))
-	}
-	if req.SrcWorkchain != nil {
-		q = q.Where("src_workchain = ?", *req.SrcWorkchain)
-	}
-	if req.DstWorkchain != nil {
-		q = q.Where("dst_workchain = ?", *req.DstWorkchain)
-	}
-	if req.OperationID != nil {
-		q = q.Where("operation_id = ?", *req.OperationID)
-	}
-	if len(req.SrcContracts) > 0 {
-		q = q.Where("src_contract IN (?)", ch.In(req.SrcContracts))
-	}
-	if len(req.DstContracts) > 0 {
-		q = q.Where("dst_contract IN (?)", ch.In(req.DstContracts))
-	}
-	if len(req.OperationNames) > 0 {
-		q = q.Where("operation_name IN (?)", ch.In(req.OperationNames))
-	}
-
-	return q.Count(ctx)
+	//q := r.ch.NewSelect().
+	//	Model((*core.Message)(nil))
+	//
+	//if len(req.Hash) > 0 {
+	//	q = q.Where("hash = ?", req.Hash)
+	//}
+	//if len(req.SrcAddresses) > 0 {
+	//	q = q.Where("src_address in (?)", ch.In(req.SrcAddresses))
+	//}
+	//if len(req.DstAddresses) > 0 {
+	//	q = q.Where("dst_address in (?)", ch.In(req.DstAddresses))
+	//}
+	//if req.SrcWorkchain != nil {
+	//	q = q.Where("src_workchain = ?", *req.SrcWorkchain)
+	//}
+	//if req.DstWorkchain != nil {
+	//	q = q.Where("dst_workchain = ?", *req.DstWorkchain)
+	//}
+	//if req.OperationID != nil {
+	//	q = q.Where("operation_id = ?", *req.OperationID)
+	//}
+	//if len(req.SrcContracts) > 0 {
+	//	q = q.Where("src_contract IN (?)", ch.In(req.SrcContracts))
+	//}
+	//if len(req.DstContracts) > 0 {
+	//	q = q.Where("dst_contract IN (?)", ch.In(req.DstContracts))
+	//}
+	//if len(req.OperationNames) > 0 {
+	//	q = q.Where("operation_name IN (?)", ch.In(req.OperationNames))
+	//}
+	//
+	//return q.Count(ctx)
+	return 0, nil
 }
 
 func (r *Repository) FilterMessages(ctx context.Context, req *filter.MessagesReq) (*filter.MessagesRes, error) {

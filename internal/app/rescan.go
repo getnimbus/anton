@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository"
 )
 
 type RescanConfig struct {

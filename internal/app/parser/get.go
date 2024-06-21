@@ -15,11 +15,11 @@ import (
 	"github.com/xssnick/tonutils-go/ton/nft"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/abi/known"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/abi/known"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 func getMethodByName(i *core.ContractInterface, n string) *abi.GetMethodDesc {

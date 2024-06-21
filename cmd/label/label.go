@@ -2,20 +2,20 @@ package label
 
 import (
 	"fmt"
+	"github.com/getnimbus/anton/internal/conf"
 	"io"
 	"net/http"
 
-	"github.com/allisson/go-env"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository"
-	"github.com/tonindexer/anton/internal/core/repository/account"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository/account"
 )
 
 type tonscanLabel struct {
@@ -141,15 +141,23 @@ var Command = &cli.Command{
 			})
 		}
 
-		chURL := env.GetString("DB_CH_URL", "")
-		pgURL := env.GetString("DB_PG_URL", "")
+		//chURL := env.GetString("DB_CH_URL", "")
+		//pgURL := env.GetString("DB_PG_URL", "")
+		pgURL := conf.Config.DbPgUrl
 
-		conn, err := repository.ConnectDB(ctx.Context, chURL, pgURL)
+		conn, err := repository.ConnectDB(
+			ctx.Context,
+			//chURL,
+			pgURL,
+		)
 		if err != nil {
 			return errors.Wrap(err, "cannot connect to a database")
 		}
 
-		accRepo := account.NewRepository(conn.CH, conn.PG)
+		accRepo := account.NewRepository(
+			//conn.CH,
+			conn.PG,
+		)
 
 		for _, l := range labels {
 			err := accRepo.AddAddressLabel(ctx.Context, l)

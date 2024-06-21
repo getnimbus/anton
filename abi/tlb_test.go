@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tonindexer/anton/abi"
+	"github.com/getnimbus/anton/abi"
 )
 
 type Payload struct {

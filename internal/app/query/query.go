@@ -6,20 +6,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/xssnick/tonutils-go/ton"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/app/fetcher"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/aggregate"
-	"github.com/tonindexer/anton/internal/core/aggregate/history"
-	"github.com/tonindexer/anton/internal/core/filter"
-	"github.com/tonindexer/anton/internal/core/repository"
-	"github.com/tonindexer/anton/internal/core/repository/account"
-	"github.com/tonindexer/anton/internal/core/repository/block"
-	"github.com/tonindexer/anton/internal/core/repository/contract"
-	"github.com/tonindexer/anton/internal/core/repository/msg"
-	"github.com/tonindexer/anton/internal/core/repository/tx"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/app/fetcher"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/aggregate"
+	"github.com/getnimbus/anton/internal/core/aggregate/history"
+	"github.com/getnimbus/anton/internal/core/filter"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository/account"
+	"github.com/getnimbus/anton/internal/core/repository/block"
+	"github.com/getnimbus/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/internal/core/repository/msg"
+	"github.com/getnimbus/anton/internal/core/repository/tx"
 )
 
 var _ app.QueryService = (*Service)(nil)
@@ -38,11 +38,14 @@ func NewService(_ context.Context, cfg *app.QueryConfig) (*Service, error) {
 	var s = new(Service)
 
 	s.QueryConfig = cfg
-	ch, pg := s.DB.CH, s.DB.PG
-	s.txRepo = tx.NewRepository(ch, pg)
-	s.msgRepo = msg.NewRepository(ch, pg)
-	s.blockRepo = block.NewRepository(ch, pg)
-	s.accountRepo = account.NewRepository(ch, pg)
+	//ch := s.DB.CH
+	pg := s.DB.PG
+	kafkaProducer := s.PRODUCER
+
+	s.txRepo = tx.NewRepository(pg, kafkaProducer)
+	s.msgRepo = msg.NewRepository(pg, kafkaProducer)
+	s.blockRepo = block.NewRepository(pg, kafkaProducer)
+	s.accountRepo = account.NewRepository(pg)
 	s.contractRepo = contract.NewRepository(pg)
 
 	return s, nil
@@ -53,7 +56,8 @@ func (s *Service) GetDefinitions(ctx context.Context) (map[abi.TLBType]abi.TLBFi
 }
 
 func (s *Service) GetStatistics(ctx context.Context) (*aggregate.Statistics, error) {
-	return aggregate.GetStatistics(ctx, s.DB.CH, s.DB.PG)
+	//return aggregate.GetStatistics(ctx, s.DB.CH, s.DB.PG)
+	return aggregate.GetStatistics(ctx, s.DB.PG)
 }
 
 func (s *Service) GetInterfaces(ctx context.Context) ([]*core.ContractInterface, error) {

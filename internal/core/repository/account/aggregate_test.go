@@ -9,11 +9,11 @@ import (
 
 	"github.com/uptrace/bun/extra/bunbig"
 
-	"github.com/tonindexer/anton/abi/known"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/aggregate"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/abi/known"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/aggregate"
+	"github.com/getnimbus/anton/internal/core/rndm"
 )
 
 func TestRepository_AggregateAccounts_NFTCollection(t *testing.T) {

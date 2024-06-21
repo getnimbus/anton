@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/getnimbus/anton/internal/conf"
 	"io"
 	"math/big"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/allisson/go-env"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
@@ -21,17 +21,17 @@ import (
 	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/urfave/cli/v2"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository/contract"
-	"github.com/tonindexer/anton/internal/core/repository/rescan"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/internal/core/repository/rescan"
 )
 
 func dbConnect() (*bun.DB, error) {
 	pg := bun.NewDB(
 		sql.OpenDB(
 			pgdriver.NewConnector(
-				pgdriver.WithDSN(env.GetString("DB_PG_URL", "")),
+				pgdriver.WithDSN(conf.Config.DbPgUrl),
 			),
 		),
 		pgdialect.New(),

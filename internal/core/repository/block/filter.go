@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/filter"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/filter"
 )
 
 func loadTransactions(q *bun.SelectQuery, prefix string, f *filter.BlocksReq) *bun.SelectQuery {
@@ -152,24 +152,25 @@ func (r *Repository) filterBlocks(ctx context.Context, f *filter.BlocksReq) (ret
 }
 
 func (r *Repository) countBlocks(ctx context.Context, f *filter.BlocksReq) (int, error) {
-	q := r.ch.NewSelect().
-		Model((*core.Block)(nil))
-
-	if f.Workchain != nil {
-		q = q.Where("workchain = ?", *f.Workchain)
-	}
-	if f.Shard != nil {
-		q = q.Where("shard = ?", *f.Shard)
-	}
-	if f.SeqNo != nil {
-		q = q.Where("seq_no = ?", *f.SeqNo)
-	}
-
-	if len(f.FileHash) > 0 {
-		q = q.Where("file_hash = ?", f.FileHash)
-	}
-
-	return q.Count(ctx)
+	//q := r.ch.NewSelect().
+	//	Model((*core.Block)(nil))
+	//
+	//if f.Workchain != nil {
+	//	q = q.Where("workchain = ?", *f.Workchain)
+	//}
+	//if f.Shard != nil {
+	//	q = q.Where("shard = ?", *f.Shard)
+	//}
+	//if f.SeqNo != nil {
+	//	q = q.Where("seq_no = ?", *f.SeqNo)
+	//}
+	//
+	//if len(f.FileHash) > 0 {
+	//	q = q.Where("file_hash = ?", f.FileHash)
+	//}
+	//
+	//return q.Count(ctx)
+	return 0, nil
 }
 
 func (r *Repository) FilterBlocks(ctx context.Context, f *filter.BlocksReq) (*filter.BlocksRes, error) {
@@ -186,10 +187,10 @@ func (r *Repository) FilterBlocks(ctx context.Context, f *filter.BlocksReq) (*fi
 		return res, nil
 	}
 
-	res.Total, err = r.countBlocks(ctx, f)
-	if err != nil {
-		return res, err
-	}
+	//res.Total, err = r.countBlocks(ctx, f)
+	//if err != nil {
+	//	return res, err
+	//}
 
 	return res, nil
 }

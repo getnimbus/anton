@@ -7,13 +7,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository"
-	"github.com/tonindexer/anton/internal/core/repository/account"
-	"github.com/tonindexer/anton/internal/core/repository/block"
-	"github.com/tonindexer/anton/internal/core/repository/msg"
-	"github.com/tonindexer/anton/internal/core/repository/tx"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository/account"
+	"github.com/getnimbus/anton/internal/core/repository/block"
+	"github.com/getnimbus/anton/internal/core/repository/msg"
+	"github.com/getnimbus/anton/internal/core/repository/tx"
 )
 
 var _ app.IndexerService = (*Service)(nil)
@@ -44,11 +44,13 @@ func NewService(cfg *app.IndexerConfig) *Service {
 		s.FromBlock = 2
 	}
 
-	ch, pg := s.DB.CH, s.DB.PG
-	s.txRepo = tx.NewRepository(ch, pg)
-	s.msgRepo = msg.NewRepository(ch, pg)
-	s.blockRepo = block.NewRepository(ch, pg)
-	s.accountRepo = account.NewRepository(ch, pg)
+	//ch, pg := s.DB.CH, s.DB.PG
+	pg := s.DB.PG
+	kafkaProducer := s.PRODUCER
+	s.txRepo = tx.NewRepository(pg, kafkaProducer)
+	s.msgRepo = msg.NewRepository(pg, kafkaProducer)
+	s.blockRepo = block.NewRepository(pg, kafkaProducer)
+	s.accountRepo = account.NewRepository(pg)
 
 	return s
 }

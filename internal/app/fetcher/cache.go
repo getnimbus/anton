@@ -7,8 +7,8 @@ import (
 
 	"github.com/xssnick/tonutils-go/ton"
 
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 var cacheInvalidation = time.Minute

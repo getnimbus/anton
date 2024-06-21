@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/getnimbus/anton/internal/conf"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	"github.com/allisson/go-env"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
@@ -17,16 +17,17 @@ import (
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/ton"
 
-	"github.com/tonindexer/anton/abi"
-	contractDesc "github.com/tonindexer/anton/cmd/contract"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/app/fetcher"
-	"github.com/tonindexer/anton/internal/app/indexer"
-	"github.com/tonindexer/anton/internal/app/parser"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository"
-	"github.com/tonindexer/anton/internal/core/repository/account"
-	"github.com/tonindexer/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/abi"
+	contractDesc "github.com/getnimbus/anton/cmd/contract"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/app/fetcher"
+	"github.com/getnimbus/anton/internal/app/indexer"
+	"github.com/getnimbus/anton/internal/app/parser"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository/account"
+	"github.com/getnimbus/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/internal/infra"
 )
 
 func getAllKnownContractFilenames(contractsDir string) (res []string, err error) {
@@ -124,12 +125,23 @@ var Command = &cli.Command{
 	},
 
 	Action: func(ctx *cli.Context) error {
-		chURL := env.GetString("DB_CH_URL", "")
-		pgURL := env.GetString("DB_PG_URL", "")
+		//chURL := env.GetString("DB_CH_URL", "")
+		//pgURL := env.GetString("DB_PG_URL", "")
+		//chURL := conf.Config.DbChUrl
+		pgURL := conf.Config.DbPgUrl
 
-		conn, err := repository.ConnectDB(ctx.Context, chURL, pgURL)
+		conn, err := repository.ConnectDB(
+			ctx.Context,
+			//chURL,
+			pgURL,
+		)
 		if err != nil {
 			return errors.Wrap(err, "cannot connect to a database")
+		}
+
+		kafkaProducer, cleanup, err := infra.NewKafkaSyncProducer(ctx.Context)
+		if err != nil {
+			return err
 		}
 
 		contractRepo := contract.NewRepository(conn.PG)
@@ -157,7 +169,7 @@ var Command = &cli.Command{
 
 		client := liteclient.NewConnectionPool()
 		api := ton.NewAPIClient(client, ton.ProofCheckPolicyUnsafe).WithRetry()
-		for _, addr := range strings.Split(env.GetString("LITESERVERS", ""), ",") {
+		for _, addr := range strings.Split(conf.Config.LiteServers, ",") {
 			split := strings.Split(addr, "|")
 			if len(split) != 2 {
 				return fmt.Errorf("wrong server address format '%s'", addr)
@@ -177,17 +189,21 @@ var Command = &cli.Command{
 			ContractRepo:     contractRepo,
 		})
 		f := fetcher.NewService(&app.FetcherConfig{
-			API:         api,
-			AccountRepo: account.NewRepository(conn.CH, conn.PG),
-			Parser:      p,
+			API: api,
+			AccountRepo: account.NewRepository(
+				//conn.CH,
+				conn.PG,
+			),
+			Parser: p,
 		})
 		i := indexer.NewService(&app.IndexerConfig{
 			DB:        conn,
+			PRODUCER:  kafkaProducer,
 			API:       api,
 			Parser:    p,
 			Fetcher:   f,
-			FromBlock: uint32(env.GetInt32("FROM_BLOCK", 1)),
-			Workers:   env.GetInt("WORKERS", 4),
+			FromBlock: conf.Config.FromBlock,
+			Workers:   conf.Config.Workers,
 		})
 		if err = i.Start(); err != nil {
 			return err
@@ -200,6 +216,7 @@ var Command = &cli.Command{
 			<-c
 			i.Stop()
 			conn.Close()
+			cleanup()
 			done <- struct{}{}
 		}()
 

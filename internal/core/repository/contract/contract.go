@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository"
 )
 
 var _ repository.Contract = (*Repository)(nil)

@@ -22,7 +22,7 @@ import (
 	"github.com/xssnick/tonutils-go/ton/nft"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/addr"
 )
 
 type VmValue struct {

@@ -3,58 +3,76 @@ package block_test
 import (
 	"context"
 	"database/sql"
+	"github.com/getnimbus/anton/internal/conf"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
-	"github.com/uptrace/go-clickhouse/ch"
 
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository/block"
-	"github.com/tonindexer/anton/internal/core/repository/tx"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository/block"
+	"github.com/getnimbus/anton/internal/core/repository/tx"
+	"github.com/getnimbus/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/internal/infra"
 )
 
 var (
-	ck   *ch.DB
-	pg   *bun.DB
-	repo *block.Repository
+	//ck   *ch.DB
+	pg            *bun.DB
+	kafkaProducer infra.KafkaSyncProducer
+	repo          *block.Repository
 )
 
 func initdb(t testing.TB) {
+	_ = conf.LoadConfig(".")
+
 	var (
-		dsnCH = "clickhouse://user:pass@localhost:9000/default?sslmode=disable"
+		//dsnCH = "clickhouse://user:pass@localhost:9000/default?sslmode=disable"
 		dsnPG = "postgres://user:pass@localhost:5432/postgres?sslmode=disable"
 		err   error
 	)
 
 	ctx := context.Background()
 
-	ck = ch.Connect(ch.WithDSN(dsnCH), ch.WithAutoCreateDatabase(true), ch.WithPoolSize(16))
-	err = ck.Ping(ctx)
+	kafkaProducer, _, err = infra.NewKafkaSyncProducer(ctx)
 	require.Nil(t, err)
+
+	//ck = ch.Connect(ch.WithDSN(dsnCH), ch.WithAutoCreateDatabase(true), ch.WithPoolSize(16))
+	//err = ck.Ping(ctx)
+	//require.Nil(t, err)
 
 	pg = bun.NewDB(sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsnPG))), pgdialect.New())
 	err = pg.Ping()
 	require.Nil(t, err)
 
-	repo = block.NewRepository(ck, pg)
+	repo = block.NewRepository(
+		//ck,
+		pg,
+		kafkaProducer,
+	)
 }
 
 func createTables(t testing.TB) {
-	err := block.CreateTables(context.Background(), ck, pg)
+	err := block.CreateTables(
+		context.Background(),
+		//ck,
+		pg,
+	)
 	require.Nil(t, err)
 
 	_, err = pg.ExecContext(context.Background(), "CREATE TYPE account_status AS ENUM (?, ?, ?, ?)",
 		core.Uninit, core.Active, core.Frozen, core.NonExist)
 	require.False(t, err != nil && !strings.Contains(err.Error(), "already exists"))
 
-	err = tx.CreateTables(context.Background(), ck, pg)
+	err = tx.CreateTables(
+		context.Background(),
+		//ck,
+		pg,
+	)
 	require.Nil(t, err)
 }
 
@@ -62,16 +80,16 @@ func dropTables(t testing.TB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := ck.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
-	_, err = pg.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
+	//_, err := ck.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
+	_, err := pg.NewDropTable().Model((*core.Transaction)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 
 	_, err = pg.ExecContext(ctx, "DROP TYPE IF EXISTS account_status")
 	require.Nil(t, err)
 
-	_, err = ck.NewDropTable().Model((*core.Block)(nil)).IfExists().Exec(ctx)
-	require.Nil(t, err)
+	//_, err = ck.NewDropTable().Model((*core.Block)(nil)).IfExists().Exec(ctx)
+	//require.Nil(t, err)
 	_, err = pg.NewDropTable().Model((*core.Block)(nil)).IfExists().Exec(ctx)
 	require.Nil(t, err)
 }
@@ -111,8 +129,8 @@ func TestRepository_AddBlocks(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, shard, got)
 
-		err = ck.NewSelect().Model(got).Where("workchain = 0").Scan(ctx)
-		require.Nil(t, err)
+		//err = ck.NewSelect().Model(got).Where("workchain = 0").Scan(ctx)
+		//require.Nil(t, err)
 		require.Equal(t, shard.ScannedAt.Truncate(time.Second), got.ScannedAt.UTC()) // TODO: debug ch timestamps
 		got.ScannedAt = shard.ScannedAt
 		require.Equal(t, shard, got)

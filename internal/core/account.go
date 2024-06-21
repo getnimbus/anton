@@ -6,11 +6,10 @@ import (
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/extra/bunbig"
-	"github.com/uptrace/go-clickhouse/ch"
 	"github.com/xssnick/tonutils-go/tlb"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
 )
 
 type AccountStatus string
@@ -30,7 +29,7 @@ var (
 )
 
 type AddressLabel struct {
-	ch.CHModel    `ch:"address_labels" json:"-"`
+	//ch.CHModel    `ch:"address_labels" json:"-"`
 	bun.BaseModel `bun:"table:address_labels" json:"-"`
 
 	Address    addr.Address    `ch:"type:String,pk" bun:"type:bytea,pk,notnull" json:"address"`
@@ -56,7 +55,7 @@ type AccountStateID struct {
 }
 
 type AccountState struct {
-	ch.CHModel    `ch:"account_states,partition:toYYYYMM(updated_at)" json:"-"`
+	//ch.CHModel    `ch:"account_states,partition:toYYYYMM(updated_at)" json:"-"`
 	bun.BaseModel `bun:"table:account_states" json:"-"`
 
 	Address addr.Address  `ch:"type:String,pk" bun:"type:bytea,pk,notnull" json:"address"`
@@ -71,8 +70,9 @@ type AccountState struct {
 
 	Balance *bunbig.Int `ch:"type:UInt256" bun:"type:numeric" json:"balance"`
 
-	LastTxLT   uint64 `ch:",pk" bun:"type:bigint,pk,notnull" json:"last_tx_lt"`
-	LastTxHash []byte `bun:"type:bytea,unique,notnull" json:"last_tx_hash"`
+	LastTxLT      uint64 `ch:",pk" bun:"type:bigint,pk,notnull" json:"last_tx_lt"`
+	LastTxHash    []byte `bun:"type:bytea,unique,notnull" json:"last_tx_hash"`
+	LastTxHashHex string `ch:"-" bun:"-" json:"last_tx_hash_hex"`
 
 	StateHash []byte `bun:"type:bytea" json:"state_hash,omitempty"` // only if account is frozen
 	Code      []byte `ch:"-" bun:"type:bytea" json:"code,omitempty"`
@@ -101,14 +101,14 @@ type AccountState struct {
 }
 
 type AccountStateCode struct {
-	ch.CHModel `ch:"account_states_code" json:"-"`
+	//ch.CHModel `ch:"account_states_code" json:"-"`
 
 	CodeHash []byte `ch:"type:String"`
 	Code     []byte `ch:"type:String"`
 }
 
 type AccountStateData struct {
-	ch.CHModel `ch:"account_states_data" json:"-"`
+	//ch.CHModel `ch:"account_states_data" json:"-"`
 
 	DataHash []byte `ch:"type:String"`
 	Data     []byte `ch:"type:String"`

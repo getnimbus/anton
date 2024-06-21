@@ -4,11 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/filter"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/go-clickhouse/ch"
-
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/filter"
 )
 
 func (r *Repository) filterTx(ctx context.Context, req *filter.TransactionsReq) (ret []*core.Transaction, err error) {
@@ -71,31 +69,32 @@ func (r *Repository) filterTx(ctx context.Context, req *filter.TransactionsReq) 
 }
 
 func (r *Repository) countTx(ctx context.Context, req *filter.TransactionsReq) (int, error) {
-	q := r.ch.NewSelect().
-		Model((*core.Transaction)(nil))
-
-	if len(req.Hash) > 0 {
-		q = q.Where("hash = ?", req.Hash)
-	}
-	if len(req.InMsgHash) > 0 {
-		q = q.Where("in_msg_hash = ?", req.InMsgHash)
-	}
-	if len(req.Addresses) > 0 {
-		q = q.Where("address in (?)", ch.In(req.Addresses))
-	}
-	if req.Workchain != nil {
-		q = q.Where("workchain = ?", *req.Workchain)
-	}
-	if req.BlockID != nil {
-		q = q.Where("workchain = ?", req.BlockID.Workchain).
-			Where("shard = ?", req.BlockID.Shard).
-			Where("block_seq_no = ?", req.BlockID.SeqNo)
-	}
-	if req.CreatedLT != nil {
-		q = q.Where("created_lt = ?", *req.CreatedLT)
-	}
-
-	return q.Count(ctx)
+	//q := r.ch.NewSelect().
+	//	Model((*core.Transaction)(nil))
+	//
+	//if len(req.Hash) > 0 {
+	//	q = q.Where("hash = ?", req.Hash)
+	//}
+	//if len(req.InMsgHash) > 0 {
+	//	q = q.Where("in_msg_hash = ?", req.InMsgHash)
+	//}
+	//if len(req.Addresses) > 0 {
+	//	q = q.Where("address in (?)", ch.In(req.Addresses))
+	//}
+	//if req.Workchain != nil {
+	//	q = q.Where("workchain = ?", *req.Workchain)
+	//}
+	//if req.BlockID != nil {
+	//	q = q.Where("workchain = ?", req.BlockID.Workchain).
+	//		Where("shard = ?", req.BlockID.Shard).
+	//		Where("block_seq_no = ?", req.BlockID.SeqNo)
+	//}
+	//if req.CreatedLT != nil {
+	//	q = q.Where("created_lt = ?", *req.CreatedLT)
+	//}
+	//
+	//return q.Count(ctx)
+	return 0, nil
 }
 
 func (r *Repository) FilterTransactions(ctx context.Context, req *filter.TransactionsReq) (*filter.TransactionsRes, error) {

@@ -27,22 +27,22 @@ RUN apt-get update && \
     apt-get install -y libsecp256k1-1 libsodium23
 
 #prepare env
-WORKDIR /go/src/github.com/tonindexer/anton
+WORKDIR /go/src/github.com/getnimbus/anton
 
 RUN go install github.com/swaggo/swag/cmd/swag@v1.8.10
 
 # download dependencies
-COPY go.mod go.sum /go/src/github.com/tonindexer/anton/
+COPY go.mod go.sum /go/src/github.com/getnimbus/anton/
 RUN go mod download
 
 # copy application code
-COPY migrations /go/src/github.com/tonindexer/anton/migrations
-COPY lru /go/src/github.com/tonindexer/anton/lru
-COPY cmd /go/src/github.com/tonindexer/anton/cmd
-COPY addr /go/src/github.com/tonindexer/anton/addr
-COPY abi /go/src/github.com/tonindexer/anton/abi
-COPY internal /go/src/github.com/tonindexer/anton/internal
-COPY main.go /go/src/github.com/tonindexer/anton
+COPY migrations /go/src/github.com/getnimbus/anton/migrations
+COPY lru /go/src/github.com/getnimbus/anton/lru
+COPY cmd /go/src/github.com/getnimbus/anton/cmd
+COPY addr /go/src/github.com/getnimbus/anton/addr
+COPY abi /go/src/github.com/getnimbus/anton/abi
+COPY internal /go/src/github.com/getnimbus/anton/internal
+COPY main.go /go/src/github.com/getnimbus/anton
 
 RUN rm /go/pkg/mod/github.com/tonkeeper/tongo@v1.3.0/lib/linux/libemulator.so
 COPY --from=emulator-builder /output/libemulator.so /lib/libemulator.so
@@ -51,7 +51,7 @@ RUN swag init \
         --output api/http --generalInfo internal/api/http/controller.go \
         --parseDependency --parseInternal
 
-RUN go build -o /anton /go/src/github.com/tonindexer/anton
+RUN go build -o /anton /go/src/github.com/getnimbus/anton
 
 
 # application
@@ -66,7 +66,7 @@ RUN groupadd anton && useradd -g anton anton
 
 WORKDIR /app
 COPY --from=builder /lib/libemulator.so /lib
-COPY --from=builder /go/src/github.com/tonindexer/anton/abi/known /var/anton/known
+COPY --from=builder /go/src/github.com/getnimbus/anton/abi/known /var/anton/known
 COPY --from=builder /anton /usr/bin/anton
 
 USER anton:anton

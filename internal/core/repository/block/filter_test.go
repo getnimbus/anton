@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/filter"
-	"github.com/tonindexer/anton/internal/core/repository/tx"
-	"github.com/tonindexer/anton/internal/core/rndm"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/filter"
+	"github.com/getnimbus/anton/internal/core/repository/tx"
+	"github.com/getnimbus/anton/internal/core/rndm"
 )
 
 func TestRepository_FilterBlocks(t *testing.T) {
@@ -58,7 +58,11 @@ func TestRepository_FilterBlocks(t *testing.T) {
 	})
 
 	t.Run("add some transactions", func(t *testing.T) {
-		txRepo := tx.NewRepository(ck, pg)
+		txRepo := tx.NewRepository(
+			//ck,
+			pg,
+			kafkaProducer,
+		)
 
 		dbTx, err := pg.Begin()
 		require.Nil(t, err)

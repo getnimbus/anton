@@ -5,8 +5,8 @@ import (
 
 	"github.com/uptrace/bun"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
 )
 
 type ContractDefinition struct {

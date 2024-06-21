@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/filter"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
-	"github.com/uptrace/go-clickhouse/ch"
-
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/filter"
 )
 
 func (r *Repository) filterAddressLabels(ctx context.Context, f *filter.LabelsReq) (ret []*core.AddressLabel, err error) {
@@ -39,16 +37,17 @@ func (r *Repository) filterAddressLabels(ctx context.Context, f *filter.LabelsRe
 }
 
 func (r *Repository) countAddressLabels(ctx context.Context, f *filter.LabelsReq) (int, error) {
-	q := r.ch.NewSelect().Model((*core.AddressLabel)(nil))
-
-	if f.Name != "" {
-		q = q.Where("positionCaseInsensitive(name, ?) > 0", f.Name)
-	}
-	if len(f.Categories) > 0 {
-		q = q.Where("hasAny(categories, ?)", ch.Array(f.Categories))
-	}
-
-	return q.Count(ctx)
+	//q := r.ch.NewSelect().Model((*core.AddressLabel)(nil))
+	//
+	//if f.Name != "" {
+	//	q = q.Where("positionCaseInsensitive(name, ?) > 0", f.Name)
+	//}
+	//if len(f.Categories) > 0 {
+	//	q = q.Where("hasAny(categories, ?)", ch.Array(f.Categories))
+	//}
+	//
+	//return q.Count(ctx)
+	return 0, nil
 }
 
 func (r *Repository) FilterLabels(ctx context.Context, f *filter.LabelsReq) (*filter.LabelsRes, error) {
@@ -177,119 +176,120 @@ func (r *Repository) filterAccountStates(ctx context.Context, f *filter.Accounts
 }
 
 func (r *Repository) countAccountStates(ctx context.Context, f *filter.AccountsReq) (int, error) {
-	q := r.ch.NewSelect().Model((*core.AccountState)(nil))
-
-	if len(f.Addresses) > 0 {
-		q = q.Where("address in (?)", ch.In(f.Addresses))
-	}
-	if len(f.StateIDs) > 0 {
-		return 0, errors.Wrap(core.ErrNotImplemented, "do not count on filter by account state ids")
-	}
-
-	if f.Workchain != nil {
-		q = q.Where("workchain = ?", *f.Workchain)
-	}
-	if f.Shard != nil {
-		q = q.Where("shard = ?", *f.Shard)
-	}
-	if f.BlockSeqNoLeq != nil {
-		q = q.Where("block_seq_no <= ?", *f.BlockSeqNoLeq)
-	}
-	if f.BlockSeqNoBeq != nil {
-		q = q.Where("block_seq_no >= ?", *f.BlockSeqNoBeq)
-	}
-
-	if len(f.ContractTypes) > 0 {
-		q = q.Where("hasAny(types, ?)", ch.Array(f.ContractTypes))
-	}
-	if f.MinterAddress != nil {
-		q = q.Where("minter_address = ?", f.MinterAddress)
-	}
-
-	if f.LatestState {
-		q = q.ColumnExpr("argMax(address, last_tx_lt)")
-		if f.OwnerAddress != nil {
-			q = q.ColumnExpr("argMax(owner_address, last_tx_lt) as owner_address")
-		}
-		q = q.Group("address")
-	} else {
-		q = q.Column("address")
-		if f.OwnerAddress != nil {
-			q = q.Column("owner_address")
-		}
-	}
-
-	qCount := r.ch.NewSelect().TableExpr("(?) as q", q)
-	if f.OwnerAddress != nil { // that's because owner address can change
-		qCount = qCount.Where("owner_address = ?", f.OwnerAddress)
-	}
-	return qCount.Count(ctx)
+	//q := r.ch.NewSelect().Model((*core.AccountState)(nil))
+	//
+	//if len(f.Addresses) > 0 {
+	//	q = q.Where("address in (?)", ch.In(f.Addresses))
+	//}
+	//if len(f.StateIDs) > 0 {
+	//	return 0, errors.Wrap(core.ErrNotImplemented, "do not count on filter by account state ids")
+	//}
+	//
+	//if f.Workchain != nil {
+	//	q = q.Where("workchain = ?", *f.Workchain)
+	//}
+	//if f.Shard != nil {
+	//	q = q.Where("shard = ?", *f.Shard)
+	//}
+	//if f.BlockSeqNoLeq != nil {
+	//	q = q.Where("block_seq_no <= ?", *f.BlockSeqNoLeq)
+	//}
+	//if f.BlockSeqNoBeq != nil {
+	//	q = q.Where("block_seq_no >= ?", *f.BlockSeqNoBeq)
+	//}
+	//
+	//if len(f.ContractTypes) > 0 {
+	//	q = q.Where("hasAny(types, ?)", ch.Array(f.ContractTypes))
+	//}
+	//if f.MinterAddress != nil {
+	//	q = q.Where("minter_address = ?", f.MinterAddress)
+	//}
+	//
+	//if f.LatestState {
+	//	q = q.ColumnExpr("argMax(address, last_tx_lt)")
+	//	if f.OwnerAddress != nil {
+	//		q = q.ColumnExpr("argMax(owner_address, last_tx_lt) as owner_address")
+	//	}
+	//	q = q.Group("address")
+	//} else {
+	//	q = q.Column("address")
+	//	if f.OwnerAddress != nil {
+	//		q = q.Column("owner_address")
+	//	}
+	//}
+	//
+	//qCount := r.ch.NewSelect().TableExpr("(?) as q", q)
+	//if f.OwnerAddress != nil { // that's because owner address can change
+	//	qCount = qCount.Where("owner_address = ?", f.OwnerAddress)
+	//}
+	//return qCount.Count(ctx)
+	return 0, nil
 }
 
 func (r *Repository) getCodeData(ctx context.Context, rows []*core.AccountState, excludeCode, excludeData bool) error { //nolint:gocognit,gocyclo // TODO: make one function working for both code and data
-	codeHashesSet, dataHashesSet := map[string]struct{}{}, map[string]struct{}{}
-	for _, row := range rows {
-		if !excludeCode && len(row.Code) == 0 && len(row.CodeHash) == 32 {
-			codeHashesSet[string(row.CodeHash)] = struct{}{}
-		}
-		if !excludeData && len(row.Data) == 0 && len(row.DataHash) == 32 {
-			dataHashesSet[string(row.DataHash)] = struct{}{}
-		}
-	}
-
-	batchLen := 1000
-	codeHashBatches, dataHashBatches := make([][][]byte, 1), make([][][]byte, 1)
-	appendHash := func(hash []byte, batches [][][]byte) [][][]byte {
-		b := batches[len(batches)-1]
-		if len(b) >= batchLen {
-			b = [][]byte{}
-			batches = append(batches, b)
-		}
-		batches[len(batches)-1] = append(b, hash)
-		return batches
-	}
-	for h := range codeHashesSet {
-		codeHashBatches = appendHash([]byte(h), codeHashBatches)
-	}
-	for h := range dataHashesSet {
-		dataHashBatches = appendHash([]byte(h), dataHashBatches)
-	}
-
-	codeRes, dataRes := map[string][]byte{}, map[string][]byte{}
-	for _, b := range codeHashBatches {
-		var codeArr []*core.AccountStateCode
-		err := r.ch.NewSelect().Model(&codeArr).Where("code_hash IN ?", ch.In(b)).Scan(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "get code")
-		}
-		for _, x := range codeArr {
-			codeRes[string(x.CodeHash)] = x.Code
-		}
-	}
-	for _, b := range dataHashBatches {
-		var dataArr []*core.AccountStateData
-		err := r.ch.NewSelect().Model(&dataArr).Where("data_hash IN ?", ch.In(b)).Scan(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "get data")
-		}
-		for _, x := range dataArr {
-			dataRes[string(x.DataHash)] = x.Data
-		}
-	}
-
-	for _, row := range rows {
-		var ok bool
-		if !excludeCode && len(row.Code) == 0 && len(row.CodeHash) == 32 {
-			if row.Code, ok = codeRes[string(row.CodeHash)]; !ok {
-				return fmt.Errorf("cannot find code with %x hash", row.CodeHash)
-			}
-		}
-		if !excludeData && len(row.Data) == 0 && len(row.DataHash) == 32 {
-			if row.Data, ok = dataRes[string(row.DataHash)]; !ok {
-				return fmt.Errorf("cannot find data with %x hash", row.DataHash)
-			}
-		}
-	}
+	//codeHashesSet, dataHashesSet := map[string]struct{}{}, map[string]struct{}{}
+	//for _, row := range rows {
+	//	if !excludeCode && len(row.Code) == 0 && len(row.CodeHash) == 32 {
+	//		codeHashesSet[string(row.CodeHash)] = struct{}{}
+	//	}
+	//	if !excludeData && len(row.Data) == 0 && len(row.DataHash) == 32 {
+	//		dataHashesSet[string(row.DataHash)] = struct{}{}
+	//	}
+	//}
+	//
+	//batchLen := 1000
+	//codeHashBatches, dataHashBatches := make([][][]byte, 1), make([][][]byte, 1)
+	//appendHash := func(hash []byte, batches [][][]byte) [][][]byte {
+	//	b := batches[len(batches)-1]
+	//	if len(b) >= batchLen {
+	//		b = [][]byte{}
+	//		batches = append(batches, b)
+	//	}
+	//	batches[len(batches)-1] = append(b, hash)
+	//	return batches
+	//}
+	//for h := range codeHashesSet {
+	//	codeHashBatches = appendHash([]byte(h), codeHashBatches)
+	//}
+	//for h := range dataHashesSet {
+	//	dataHashBatches = appendHash([]byte(h), dataHashBatches)
+	//}
+	//
+	//codeRes, dataRes := map[string][]byte{}, map[string][]byte{}
+	//for _, b := range codeHashBatches {
+	//	var codeArr []*core.AccountStateCode
+	//	err := r.ch.NewSelect().Model(&codeArr).Where("code_hash IN ?", ch.In(b)).Scan(ctx)
+	//	if err != nil {
+	//		return errors.Wrapf(err, "get code")
+	//	}
+	//	for _, x := range codeArr {
+	//		codeRes[string(x.CodeHash)] = x.Code
+	//	}
+	//}
+	//for _, b := range dataHashBatches {
+	//	var dataArr []*core.AccountStateData
+	//	err := r.ch.NewSelect().Model(&dataArr).Where("data_hash IN ?", ch.In(b)).Scan(ctx)
+	//	if err != nil {
+	//		return errors.Wrapf(err, "get data")
+	//	}
+	//	for _, x := range dataArr {
+	//		dataRes[string(x.DataHash)] = x.Data
+	//	}
+	//}
+	//
+	//for _, row := range rows {
+	//	var ok bool
+	//	if !excludeCode && len(row.Code) == 0 && len(row.CodeHash) == 32 {
+	//		if row.Code, ok = codeRes[string(row.CodeHash)]; !ok {
+	//			return fmt.Errorf("cannot find code with %x hash", row.CodeHash)
+	//		}
+	//	}
+	//	if !excludeData && len(row.Data) == 0 && len(row.DataHash) == 32 {
+	//		if row.Data, ok = dataRes[string(row.DataHash)]; !ok {
+	//			return fmt.Errorf("cannot find data with %x hash", row.DataHash)
+	//		}
+	//	}
+	//}
 
 	return nil
 }
@@ -304,13 +304,13 @@ func (r *Repository) FilterAccounts(ctx context.Context, f *filter.AccountsReq) 
 		f.Limit = 3
 	}
 
-	res.Total, err = r.countAccountStates(ctx, f)
-	if err != nil && !errors.Is(err, core.ErrNotImplemented) {
-		return res, errors.Wrap(err, "count account states")
-	}
-	if res.Total == 0 && !errors.Is(err, core.ErrNotImplemented) {
-		return res, nil
-	}
+	//res.Total, err = r.countAccountStates(ctx, f)
+	//if err != nil && !errors.Is(err, core.ErrNotImplemented) {
+	//	return res, errors.Wrap(err, "count account states")
+	//}
+	//if res.Total == 0 && !errors.Is(err, core.ErrNotImplemented) {
+	//	return res, nil
+	//}
 
 	res.Rows, err = r.filterAccountStates(ctx, f, res.Total)
 	if err != nil {

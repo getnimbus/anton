@@ -9,8 +9,8 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/go-clickhouse/ch"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 type AddressStatusCount struct {
@@ -200,32 +200,37 @@ func getTransactionStatistics(ctx context.Context, ck *ch.DB, ret *Statistics) e
 	return nil
 }
 
-func GetStatistics(ctx context.Context, ck *ch.DB, pg *bun.DB) (*Statistics, error) {
-	var (
-		ret Statistics
-		err error
-	)
-
-	if err := getBlockStatistics(ctx, ck, &ret); err != nil {
-		return nil, err
-	}
-
-	if err := getAccountStatistics(ctx, ck, &ret); err != nil {
-		return nil, err
-	}
-
-	if err := getTransactionStatistics(ctx, ck, &ret); err != nil {
-		return nil, err
-	}
-
-	ret.ContractInterfaceCount, err = pg.NewSelect().Model((*core.ContractInterface)(nil)).Count(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "contract interface count")
-	}
-	ret.ContractOperationCount, err = pg.NewSelect().Model((*core.ContractOperation)(nil)).Count(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "contract operation count")
-	}
-
-	return &ret, nil
+func GetStatistics(
+	ctx context.Context,
+	//ck *ch.DB,
+	pg *bun.DB,
+) (*Statistics, error) {
+	//var (
+	//	ret Statistics
+	//	err error
+	//)
+	//
+	//if err := getBlockStatistics(ctx, ck, &ret); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if err := getAccountStatistics(ctx, ck, &ret); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if err := getTransactionStatistics(ctx, ck, &ret); err != nil {
+	//	return nil, err
+	//}
+	//
+	//ret.ContractInterfaceCount, err = pg.NewSelect().Model((*core.ContractInterface)(nil)).Count(ctx)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "contract interface count")
+	//}
+	//ret.ContractOperationCount, err = pg.NewSelect().Model((*core.ContractOperation)(nil)).Count(ctx)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "contract operation count")
+	//}
+	//
+	//return &ret, nil
+	return nil, nil
 }

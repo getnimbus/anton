@@ -11,9 +11,9 @@ import (
 	"github.com/uptrace/bun/extra/bunbig"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
 )
 
 func TestService_ParseAccountData_WalletV3R2(t *testing.T) {

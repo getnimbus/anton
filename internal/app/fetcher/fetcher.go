@@ -1,7 +1,7 @@
 package fetcher
 
 import (
-	"github.com/tonindexer/anton/internal/app"
+	"github.com/getnimbus/anton/internal/app"
 )
 
 var _ app.FetcherService = (*Service)(nil)

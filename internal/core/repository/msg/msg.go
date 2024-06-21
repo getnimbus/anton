@@ -3,29 +3,38 @@ package msg
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"github.com/getnimbus/anton/internal/conf"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/go-clickhouse/ch"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/addr"
-	"github.com/tonindexer/anton/internal/core"
-	"github.com/tonindexer/anton/internal/core/repository"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/core"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/infra"
 )
 
 var _ repository.Message = (*Repository)(nil)
 
 type Repository struct {
-	ch *ch.DB
-	pg *bun.DB
+	//ch *ch.DB
+	pg            *bun.DB
+	kafkaProducer infra.KafkaSyncProducer
 }
 
-func NewRepository(ck *ch.DB, pg *bun.DB) *Repository {
-	return &Repository{ch: ck, pg: pg}
+func NewRepository(
+	//ck *ch.DB,
+	pg *bun.DB,
+	kafkaProducer infra.KafkaSyncProducer,
+) *Repository {
+	return &Repository{
+		//ch: ck,
+		pg:            pg,
+		kafkaProducer: kafkaProducer,
+	}
 }
 
 func createIndexes(ctx context.Context, pgDB *bun.DB) error {
@@ -125,21 +134,25 @@ func createIndexes(ctx context.Context, pgDB *bun.DB) error {
 	return nil
 }
 
-func CreateTables(ctx context.Context, chDB *ch.DB, pgDB *bun.DB) error {
+func CreateTables(
+	ctx context.Context,
+	//chDB *ch.DB,
+	pgDB *bun.DB,
+) error {
 	_, err := pgDB.ExecContext(ctx, "CREATE TYPE message_type AS ENUM (?, ?, ?)",
 		core.ExternalIn, core.ExternalOut, core.Internal)
 	if err != nil && !strings.Contains(err.Error(), "already exists") {
 		return errors.Wrap(err, "messages pg create enum")
 	}
 
-	_, err = chDB.NewCreateTable().
-		IfNotExists().
-		Engine("ReplacingMergeTree").
-		Model(&core.Message{}).
-		Exec(ctx)
-	if err != nil {
-		return errors.Wrap(err, "message ch create table")
-	}
+	//_, err = chDB.NewCreateTable().
+	//	IfNotExists().
+	//	Engine("ReplacingMergeTree").
+	//	Model(&core.Message{}).
+	//	Exec(ctx)
+	//if err != nil {
+	//	return errors.Wrap(err, "message ch create table")
+	//}
 
 	_, err = pgDB.NewCreateTable().
 		Model(&core.Message{}).
@@ -180,26 +193,32 @@ func (r *Repository) AddMessages(ctx context.Context, tx bun.Tx, messages []*cor
 		// if some message has been already inserted,
 		// we update destination transaction and parsed data
 
-		_, err := tx.NewInsert().Model(msg).
-			On("CONFLICT (hash) DO UPDATE").
-			Set("dst_tx_lt = ?dst_tx_lt").
-			Set("dst_workchain = ?dst_workchain").
-			Set("dst_shard = ?dst_shard").
-			Set("dst_block_seq_no = ?dst_block_seq_no").
-			Set("src_contract = ?src_contract").
-			Set("dst_contract = ?dst_contract").
-			Set("operation_name = ?operation_name").
-			Set("data_json = ?data_json").
-			Set("error = ?error").
-			Exec(ctx)
-		if err != nil {
+		//_, err := tx.NewInsert().Model(msg).
+		//	On("CONFLICT (hash) DO UPDATE").
+		//	Set("dst_tx_lt = ?dst_tx_lt").
+		//	Set("dst_workchain = ?dst_workchain").
+		//	Set("dst_shard = ?dst_shard").
+		//	Set("dst_block_seq_no = ?dst_block_seq_no").
+		//	Set("src_contract = ?src_contract").
+		//	Set("dst_contract = ?dst_contract").
+		//	Set("operation_name = ?operation_name").
+		//	Set("data_json = ?data_json").
+		//	Set("error = ?error").
+		//	Exec(ctx)
+		//if err != nil {
+		//	return err
+		//}
+
+		if err := r.kafkaProducer.SendJson(ctx, conf.Config.TonMessagesTopic, msg); err != nil {
 			return err
 		}
 	}
-	_, err := r.ch.NewInsert().Model(&messages).Exec(ctx)
-	if err != nil {
-		return err
-	}
+
+	// clickhouse insert
+	//_, err := r.ch.NewInsert().Model(&messages).Exec(ctx)
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -234,10 +253,11 @@ func (r *Repository) UpdateMessages(ctx context.Context, messages []*core.Messag
 		}
 	}
 
-	_, err := r.ch.NewInsert().Model(&messages).Exec(ctx)
-	if err != nil {
-		return err
-	}
+	// clickhouse insert
+	//_, err := r.ch.NewInsert().Model(&messages).Exec(ctx)
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }
@@ -286,56 +306,57 @@ func (r *Repository) MatchMessagesByOperationDesc(ctx context.Context,
 	afterTxLt uint64,
 	limit int,
 ) ([][]byte, error) {
-	var addressesRet []struct {
-		Address *addr.Address `ch:"type:String"`
-	}
-
-	q := r.ch.NewSelect().Model((*core.AccountState)(nil)).
-		ColumnExpr("DISTINCT address").
-		Where("hasAny(types, [?])", string(contractName))
-	if afterAddress != nil {
-		q = q.Where("address >= ?", afterAddress)
-	}
-	err := q.
-		Order("address ASC").
-		Limit(limit).
-		Scan(ctx, &addressesRet)
-	if err != nil {
-		return nil, errors.Wrap(err, "get contract addresses")
-	}
-
-	var addresses []*addr.Address
-	for _, row := range addressesRet {
-		addresses = append(addresses, row.Address)
-	}
-
-	addrCol, ltCol := "dst_address", "dst_tx_lt"
-	if outgoing {
-		addrCol, ltCol = "src_address", "src_tx_lt"
-	}
-
-	var msgHashesRet []struct {
-		Hash []byte
-	}
-	q = r.ch.NewSelect().Model((*core.Message)(nil)).
-		ColumnExpr("DISTINCT hash").
-		Where("type = ?", string(msgType)).
-		Where(addrCol+" IN (?)", ch.In(addresses)).
-		Where("operation_id = ?", operationId)
-	if afterAddress != nil && afterTxLt != 0 {
-		q = q.Where(fmt.Sprintf("(%s, %s) > (?, ?)", addrCol, ltCol), afterAddress, afterTxLt)
-	}
-	err = q.
-		OrderExpr(fmt.Sprintf("%s ASC, %s ASC", addrCol, ltCol)).
-		Limit(limit).
-		Scan(ctx, &msgHashesRet)
-	if err != nil {
-		return nil, errors.Wrap(err, "get message hashes")
-	}
-
-	var hashes [][]byte
-	for _, row := range msgHashesRet {
-		hashes = append(hashes, row.Hash)
-	}
-	return hashes, nil
+	//var addressesRet []struct {
+	//	Address *addr.Address `ch:"type:String"`
+	//}
+	//
+	//q := r.ch.NewSelect().Model((*core.AccountState)(nil)).
+	//	ColumnExpr("DISTINCT address").
+	//	Where("hasAny(types, [?])", string(contractName))
+	//if afterAddress != nil {
+	//	q = q.Where("address >= ?", afterAddress)
+	//}
+	//err := q.
+	//	Order("address ASC").
+	//	Limit(limit).
+	//	Scan(ctx, &addressesRet)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "get contract addresses")
+	//}
+	//
+	//var addresses []*addr.Address
+	//for _, row := range addressesRet {
+	//	addresses = append(addresses, row.Address)
+	//}
+	//
+	//addrCol, ltCol := "dst_address", "dst_tx_lt"
+	//if outgoing {
+	//	addrCol, ltCol = "src_address", "src_tx_lt"
+	//}
+	//
+	//var msgHashesRet []struct {
+	//	Hash []byte
+	//}
+	//q = r.ch.NewSelect().Model((*core.Message)(nil)).
+	//	ColumnExpr("DISTINCT hash").
+	//	Where("type = ?", string(msgType)).
+	//	Where(addrCol+" IN (?)", ch.In(addresses)).
+	//	Where("operation_id = ?", operationId)
+	//if afterAddress != nil && afterTxLt != 0 {
+	//	q = q.Where(fmt.Sprintf("(%s, %s) > (?, ?)", addrCol, ltCol), afterAddress, afterTxLt)
+	//}
+	//err = q.
+	//	OrderExpr(fmt.Sprintf("%s ASC, %s ASC", addrCol, ltCol)).
+	//	Limit(limit).
+	//	Scan(ctx, &msgHashesRet)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "get message hashes")
+	//}
+	//
+	//var hashes [][]byte
+	//for _, row := range msgHashesRet {
+	//	hashes = append(hashes, row.Hash)
+	//}
+	//return hashes, nil
+	return nil, nil
 }

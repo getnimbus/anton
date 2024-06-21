@@ -2,23 +2,23 @@ package web
 
 import (
 	"fmt"
+	"github.com/getnimbus/anton/internal/conf"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	"github.com/allisson/go-env"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/ton"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/api/http"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/app/query"
-	"github.com/tonindexer/anton/internal/core/repository"
-	"github.com/tonindexer/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/api/http"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/app/query"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository/contract"
 )
 
 var Command = &cli.Command{
@@ -26,11 +26,15 @@ var Command = &cli.Command{
 	Usage: "HTTP JSON API",
 
 	Action: func(ctx *cli.Context) error {
-		chURL := env.GetString("DB_CH_URL", "")
-		pgURL := env.GetString("DB_PG_URL", "")
+		//chURL := env.GetString("DB_CH_URL", "")
+		//pgURL := env.GetString("DB_PG_URL", "")
+		pgURL := conf.Config.DbPgUrl
 
 		conn, err := repository.ConnectDB(
-			ctx.Context, chURL, pgURL)
+			ctx.Context,
+			//chURL,
+			pgURL,
+		)
 		if err != nil {
 			return errors.Wrap(err, "cannot connect to a database")
 		}
@@ -46,7 +50,7 @@ var Command = &cli.Command{
 
 		client := liteclient.NewConnectionPool()
 		api := ton.NewAPIClient(client, ton.ProofCheckPolicyUnsafe).WithRetry()
-		for _, addr := range strings.Split(env.GetString("LITESERVERS", ""), ",") {
+		for _, addr := range strings.Split(conf.Config.LiteServers, ",") {
 			split := strings.Split(addr, "|")
 			if len(split) != 2 {
 				return fmt.Errorf("wrong server address format '%s'", addr)
@@ -66,7 +70,8 @@ var Command = &cli.Command{
 		}
 
 		srv := http.NewServer(
-			env.GetString("LISTEN", "0.0.0.0:80"),
+			//env.GetString("LISTEN", "0.0.0.0:80"),
+			"0.0.0.0:8080",
 		)
 		srv.RegisterRoutes(http.NewController(qs))
 

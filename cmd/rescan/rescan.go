@@ -2,27 +2,28 @@ package rescan
 
 import (
 	"fmt"
+	"github.com/getnimbus/anton/internal/conf"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	"github.com/allisson/go-env"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/ton"
 
-	"github.com/tonindexer/anton/abi"
-	"github.com/tonindexer/anton/internal/app"
-	"github.com/tonindexer/anton/internal/app/parser"
-	"github.com/tonindexer/anton/internal/app/rescan"
-	"github.com/tonindexer/anton/internal/core/repository"
-	"github.com/tonindexer/anton/internal/core/repository/account"
-	"github.com/tonindexer/anton/internal/core/repository/block"
-	"github.com/tonindexer/anton/internal/core/repository/contract"
-	"github.com/tonindexer/anton/internal/core/repository/msg"
-	rescanRepository "github.com/tonindexer/anton/internal/core/repository/rescan"
+	"github.com/getnimbus/anton/abi"
+	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/app/parser"
+	"github.com/getnimbus/anton/internal/app/rescan"
+	"github.com/getnimbus/anton/internal/core/repository"
+	"github.com/getnimbus/anton/internal/core/repository/account"
+	"github.com/getnimbus/anton/internal/core/repository/block"
+	"github.com/getnimbus/anton/internal/core/repository/contract"
+	"github.com/getnimbus/anton/internal/core/repository/msg"
+	rescanRepository "github.com/getnimbus/anton/internal/core/repository/rescan"
+	"github.com/getnimbus/anton/internal/infra"
 )
 
 var Command = &cli.Command{
@@ -31,12 +32,23 @@ var Command = &cli.Command{
 	Usage: "Updates account states and messages data",
 
 	Action: func(ctx *cli.Context) error {
-		chURL := env.GetString("DB_CH_URL", "")
-		pgURL := env.GetString("DB_PG_URL", "")
+		//chURL := env.GetString("DB_CH_URL", "")
+		//pgURL := env.GetString("DB_PG_URL", "")
+		//chURL := conf.Config.DbChUrl
+		pgURL := conf.Config.DbPgUrl
 
-		conn, err := repository.ConnectDB(ctx.Context, chURL, pgURL)
+		conn, err := repository.ConnectDB(
+			ctx.Context,
+			//chURL,
+			pgURL,
+		)
 		if err != nil {
 			return errors.Wrap(err, "cannot connect to a database")
+		}
+
+		kafkaProducer, cleanup, err := infra.NewKafkaSyncProducer(ctx.Context)
+		if err != nil {
+			return err
 		}
 
 		contractRepo := contract.NewRepository(conn.PG)
@@ -60,7 +72,7 @@ var Command = &cli.Command{
 
 		client := liteclient.NewConnectionPool()
 		api := ton.NewAPIClient(client, ton.ProofCheckPolicyUnsafe).WithRetry()
-		for _, addr := range strings.Split(env.GetString("LITESERVERS", ""), ",") {
+		for _, addr := range strings.Split(conf.Config.LiteServers, ",") {
 			split := strings.Split(addr, "|")
 			if len(split) != 2 {
 				return fmt.Errorf("wrong server address format '%s'", addr)
@@ -82,12 +94,23 @@ var Command = &cli.Command{
 		i := rescan.NewService(&app.RescanConfig{
 			ContractRepo: contractRepo,
 			RescanRepo:   rescanRepository.NewRepository(conn.PG),
-			AccountRepo:  account.NewRepository(conn.CH, conn.PG),
-			BlockRepo:    block.NewRepository(conn.CH, conn.PG),
-			MessageRepo:  msg.NewRepository(conn.CH, conn.PG),
-			Parser:       p,
-			Workers:      env.GetInt("RESCAN_WORKERS", 4),
-			SelectLimit:  env.GetInt("RESCAN_SELECT_LIMIT", 1000),
+			AccountRepo: account.NewRepository(
+				//conn.CH,
+				conn.PG,
+			),
+			BlockRepo: block.NewRepository(
+				//conn.CH,
+				conn.PG,
+				kafkaProducer,
+			),
+			MessageRepo: msg.NewRepository(
+				//conn.CH,
+				conn.PG,
+				kafkaProducer,
+			),
+			Parser:      p,
+			Workers:     conf.Config.RescanWorkers,
+			SelectLimit: conf.Config.RescanSelectLimit,
 		})
 		if err = i.Start(); err != nil {
 			return err
@@ -100,6 +123,7 @@ var Command = &cli.Command{
 			<-c
 			i.Stop()
 			conn.Close()
+			cleanup()
 			done <- struct{}{}
 		}()
 
