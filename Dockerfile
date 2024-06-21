@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.5-labs
 FROM debian:12.2-slim AS emulator-builder
 
 ENV DEBIAN_FRONTEND=noninteractive
