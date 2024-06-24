@@ -7,7 +7,6 @@ toolchain go1.22.4
 replace github.com/uptrace/go-clickhouse v0.3.1 => github.com/iam047801/go-clickhouse v0.0.0-20240229162752-6a94cfc6c817 // go-clickhouse branch with dirty fixes
 
 require (
-	github.com/allisson/go-env v0.3.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/pkg/errors v0.9.1
@@ -17,7 +16,7 @@ require (
 	github.com/swaggo/files v1.0.0
 	github.com/swaggo/gin-swagger v1.5.3
 	github.com/swaggo/swag v1.8.10
-	github.com/tonkeeper/tongo v1.8.10
+	github.com/tonkeeper/tongo v1.3.0
 	github.com/uptrace/bun v1.1.12
 	github.com/uptrace/bun/dialect/pgdialect v1.1.12
 	github.com/uptrace/bun/driver/pgdriver v1.1.12
@@ -128,7 +127,7 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/oasisprotocol/curve25519-voi v0.0.0-20220328075252-7dd334e3daae // indirect
+	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
