@@ -2,6 +2,7 @@ package infra
 
 import (
 	"database/sql"
+
 	"github.com/getnimbus/anton/internal/conf"
 
 	drv "github.com/uber/athenadriver/go"

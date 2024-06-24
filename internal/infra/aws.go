@@ -2,6 +2,7 @@ package infra
 
 import (
 	"fmt"
+
 	"github.com/getnimbus/anton/internal/conf"
 
 	"github.com/aws/aws-sdk-go/aws"

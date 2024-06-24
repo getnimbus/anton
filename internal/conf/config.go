@@ -23,6 +23,7 @@ func init() {
 type config struct {
 	Env               string `mapstructure:"ENV" default:"dev"`
 	Debug             string `mapstructure:"DEBUG" default:"no"`
+	Backfill          string `mapstructure:"BACKFILL" default:"no"`
 	Workers           int    `mapstructure:"WORKERS" default:"4"`
 	RescanWorkers     int    `mapstructure:"RESCAN_WORKERS" default:"4"`
 	RescanSelectLimit int    `mapstructure:"RESCAN_SELECT_LIMIT" default:"1000"`
@@ -67,6 +68,10 @@ func (c *config) IsProd() bool {
 
 func (c *config) IsDebug() bool {
 	return strings.ToLower(c.Debug) == "yes"
+}
+
+func (c *config) IsBackfill() bool {
+	return strings.ToLower(c.Backfill) == "yes"
 }
 
 // LoadConfig read configuration for both file and system environment

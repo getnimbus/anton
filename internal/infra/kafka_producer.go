@@ -8,8 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/getnimbus/anton/internal/conf"
+
+	"github.com/IBM/sarama"
 	"github.com/getnimbus/ultrago/u_logger"
 	jsoniter "github.com/json-iterator/go"
 )
