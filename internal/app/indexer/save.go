@@ -144,7 +144,9 @@ func (s *Service) getMessageSource(ctx context.Context, msg *core.Message) (skip
 		return false
 	}
 	if err != nil && !errors.Is(err, core.ErrNotFound) {
-		panic(errors.Wrapf(err, "get message with hash %s", msg.Hash))
+		//panic(errors.Wrapf(err, "get message with hash %s", msg.Hash))
+		log.Info().Msg(fmt.Sprintf("get message with hash %s", msg.Hash))
+		return true
 	}
 
 	// some masterchain messages does not have source
@@ -164,9 +166,13 @@ func (s *Service) getMessageSource(ctx context.Context, msg *core.Message) (skip
 	//		Msg("cannot find source message")
 	//	return true
 	//}
+	//
+	//panic(fmt.Errorf("unknown source of message with dst tx hash %x on block (%d, %d, %d) from %s to %s",
+	//	msg.DstTxHash, msg.DstWorkchain, msg.DstShard, msg.DstBlockSeqNo, msg.SrcAddress.String(), msg.DstAddress.String()))
 
-	panic(fmt.Errorf("unknown source of message with dst tx hash %x on block (%d, %d, %d) from %s to %s",
+	log.Info().Msg(fmt.Sprintf("unknown source of message with dst tx hash %x on block (%d, %d, %d) from %s to %s",
 		msg.DstTxHash, msg.DstWorkchain, msg.DstShard, msg.DstBlockSeqNo, msg.SrcAddress.String(), msg.DstAddress.String()))
+	return true
 }
 
 func (s *Service) uniqMessages(ctx context.Context, transactions []*core.Transaction) []*core.Message {
