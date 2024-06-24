@@ -4,12 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/getnimbus/anton/internal/conf"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/getnimbus/anton/internal/conf"
 	"github.com/getnimbus/ultrago/u_logger"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -33,7 +33,7 @@ func NewKafkaSyncProducer(ctx context.Context) (KafkaSyncProducer, func(), error
 	kafkaConfig.Producer.Retry.Max = 10
 	kafkaConfig.Producer.Return.Successes = true
 	kafkaConfig.Producer.Return.Errors = true
-	kafkaConfig.Producer.MaxMessageBytes = 20971520 // 20MB
+	kafkaConfig.Producer.MaxMessageBytes = 52428800 // 50MB
 	// for authentication in prod
 	if conf.Config.KafkaUsername != "" && conf.Config.KafkaPassword != "" {
 		kafkaConfig.Net.SASL.Enable = true
@@ -82,7 +82,7 @@ func NewKafkaAsyncProducer(ctx context.Context) (KafkaAsyncProducer, func(), err
 	kafkaConfig.Producer.RequiredAcks = sarama.WaitForLocal // only wait for the leader to ack
 	kafkaConfig.Producer.Return.Successes = true
 	kafkaConfig.Producer.Return.Errors = true
-	kafkaConfig.Producer.MaxMessageBytes = 20971520               // 20MB
+	kafkaConfig.Producer.MaxMessageBytes = 52428800               // 50MB
 	kafkaConfig.Producer.Flush.Frequency = 500 * time.Millisecond // flush batches every 500ms
 	// for authentication in prod
 	if conf.Config.KafkaUsername != "" && conf.Config.KafkaPassword != "" {
@@ -140,7 +140,7 @@ func NewKafkaTxProducer(ctx context.Context) (KafkaTxProducer, func(), error) {
 		kafkaConfig.Producer.Compression = sarama.CompressionSnappy // sarama.CompressionNone
 		kafkaConfig.Producer.Partitioner = sarama.NewHashPartitioner
 		kafkaConfig.Producer.RequiredAcks = sarama.WaitForAll
-		kafkaConfig.Producer.MaxMessageBytes = 20971520 // 20MB
+		kafkaConfig.Producer.MaxMessageBytes = 52428800 // 50MB
 		kafkaConfig.Producer.Transaction.Retry.Backoff = 10
 		kafkaConfig.Producer.Transaction.ID = "txn_nimbus_eth_producer"
 		kafkaConfig.Net.MaxOpenRequests = 1
