@@ -45,7 +45,6 @@ func (s *Service) insertData(
 				Uint32("op_id", message.OperationID).
 				Msg("parse message payload")
 		}
-		message = message.WithDateKey()
 	}
 
 	if err := func() error {
@@ -197,6 +196,8 @@ func (s *Service) uniqMessages(ctx context.Context, transactions []*core.Transac
 				continue
 			}
 		}
+
+		msg = msg.WithDateKey()
 		if len(msg.Hash) > 0 {
 			msg.HashHex = hex.EncodeToString(msg.Hash)
 		}
