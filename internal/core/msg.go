@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -76,12 +77,23 @@ type Message struct {
 	DataJSON      json.RawMessage `ch:"type:String" bun:"type:jsonb" json:"data,omitempty"`
 	Error         string          `json:"error,omitempty"`
 
-	CreatedAt time.Time `bun:"type:timestamp without time zone,notnull" json:"created_at"`
-	CreatedLT uint64    `bun:",notnull" json:"created_lt"`
+	CreatedAt   time.Time `bun:"type:timestamp without time zone,notnull" json:"created_at"`
+	CreatedLT   uint64    `bun:",notnull" json:"created_lt"`
+	DateKey     string    `ch:"-" bun:"-" json:"date_key"`
+	TimestampMs string    `ch:"-" bun:"-" json:"timestamp_ms"`
 }
 
 func (m *Message) PartitionKey() string {
 	return hex.EncodeToString(m.Hash)
+}
+
+func (m *Message) WithDateKey() *Message {
+	if m.DateKey != "" {
+		return m
+	}
+	m.DateKey = m.CreatedAt.Format(time.DateOnly)
+	m.TimestampMs = strconv.FormatInt(m.CreatedAt.UnixMilli(), 10)
+	return m
 }
 
 type MessageRepository interface {

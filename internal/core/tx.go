@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/hex"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -52,7 +53,9 @@ type Transaction struct {
 	OrigStatus AccountStatus `ch:",lc" bun:"type:account_status,notnull" json:"orig_status"`
 	EndStatus  AccountStatus `ch:",lc" bun:"type:account_status,notnull" json:"end_status"`
 
-	CreatedAt time.Time `bun:"type:timestamp without time zone,notnull" json:"created_at"`
+	CreatedAt   time.Time `bun:"type:timestamp without time zone,notnull" json:"created_at"`
+	DateKey     string    `ch:"-" bun:"-" json:"date_key"`
+	TimestampMs string    `ch:"-" bun:"-" json:"timestamp_ms"`
 }
 
 func (tx *Transaction) LoadDescription() error { // TODO: optionally load description in API
@@ -74,6 +77,15 @@ func (tx *Transaction) LoadDescription() error { // TODO: optionally load descri
 
 func (tx *Transaction) PartitionKey() string {
 	return hex.EncodeToString(tx.Hash)
+}
+
+func (tx *Transaction) WithDateKey() *Transaction {
+	if tx.DateKey != "" {
+		return tx
+	}
+	tx.DateKey = tx.CreatedAt.Format(time.DateOnly)
+	tx.TimestampMs = strconv.FormatInt(tx.CreatedAt.UnixMilli(), 10)
+	return tx
 }
 
 type TransactionRepository interface {

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -45,7 +46,9 @@ type Block struct {
 
 	// TODO: block info data
 
-	ScannedAt time.Time `bun:"type:timestamp without time zone,notnull" json:"scanned_at"`
+	ScannedAt   time.Time `bun:"type:timestamp without time zone,notnull" json:"scanned_at"`
+	DateKey     string    `ch:"-" bun:"-" json:"date_key"`
+	TimestampMs string    `ch:"-" bun:"-" json:"timestamp_ms"`
 }
 
 func (b *Block) ID() BlockID {
@@ -58,6 +61,15 @@ func (b *Block) ID() BlockID {
 
 func (b *Block) PartitionKey() string {
 	return fmt.Sprintf("%v:%v", b.Workchain, b.Shard)
+}
+
+func (b *Block) WithDateKey() *Block {
+	if b.DateKey != "" {
+		return b
+	}
+	b.DateKey = b.ScannedAt.Format(time.DateOnly)
+	b.TimestampMs = strconv.FormatInt(b.ScannedAt.UnixMilli(), 10)
+	return b
 }
 
 type BlockRepository interface {

@@ -45,6 +45,7 @@ func (s *Service) insertData(
 				Uint32("op_id", message.OperationID).
 				Msg("parse message payload")
 		}
+		message = message.WithDateKey()
 	}
 
 	if err := func() error {
@@ -213,7 +214,16 @@ func (s *Service) saveBlock(ctx context.Context, master *core.Block) {
 
 	var newTransactions []*core.Transaction
 	for i := range newBlocks {
+		newBlocks[i] = newBlocks[i].WithDateKey()
+		if len(newBlocks[i].FileHash) > 0 {
+			newBlocks[i].FileHashHex = hex.EncodeToString(newBlocks[i].FileHash)
+		}
+		if len(newBlocks[i].RootHash) > 0 {
+			newBlocks[i].RootHashHex = hex.EncodeToString(newBlocks[i].RootHash)
+		}
+
 		for _, tx := range newBlocks[i].Transactions {
+			tx = tx.WithDateKey()
 			if len(tx.Hash) > 0 {
 				tx.HashHex = hex.EncodeToString(tx.Hash)
 			}
@@ -225,13 +235,6 @@ func (s *Service) saveBlock(ctx context.Context, master *core.Block) {
 			}
 		}
 		newTransactions = append(newTransactions, newBlocks[i].Transactions...)
-
-		if len(newBlocks[i].FileHash) > 0 {
-			newBlocks[i].FileHashHex = hex.EncodeToString(newBlocks[i].FileHash)
-		}
-		if len(newBlocks[i].RootHash) > 0 {
-			newBlocks[i].RootHashHex = hex.EncodeToString(newBlocks[i].RootHash)
-		}
 	}
 
 	if err := s.insertData(ctx, s.uniqAccounts(newTransactions), s.uniqMessages(ctx, newTransactions), newTransactions, newBlocks); err != nil {
