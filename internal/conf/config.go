@@ -74,6 +74,10 @@ func (c *config) IsBackfill() bool {
 	return strings.ToLower(c.Backfill) == "yes"
 }
 
+func (c *config) IsRealtime() bool {
+	return !c.IsBackfill()
+}
+
 // LoadConfig read configuration for both file and system environment
 func LoadConfig(path string) error {
 	logger := u_logger.NewLogger()

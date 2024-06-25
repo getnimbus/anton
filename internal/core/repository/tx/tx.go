@@ -119,9 +119,11 @@ func (r *Repository) AddTransactions(ctx context.Context, tx bun.Tx, transaction
 		return nil
 	}
 
-	for _, t := range transactions {
-		if err := r.kafkaProducer.SendJson(ctx, conf.Config.TonTxsTopic, t); err != nil {
-			return err
+	if conf.Config.IsRealtime() {
+		for _, t := range transactions {
+			if err := r.kafkaProducer.SendJson(ctx, conf.Config.TonTxsTopic, t); err != nil {
+				return err
+			}
 		}
 	}
 

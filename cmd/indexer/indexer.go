@@ -144,6 +144,11 @@ var Command = &cli.Command{
 			return err
 		}
 
+		awsSession, err := infra.NewAwsSession()
+		if err != nil {
+			return err
+		}
+
 		contractRepo := contract.NewRepository(conn.PG)
 
 		interfaces, err := contractRepo.GetInterfaces(ctx.Context)
@@ -199,6 +204,7 @@ var Command = &cli.Command{
 		i := indexer.NewService(&app.IndexerConfig{
 			DB:        conn,
 			PRODUCER:  kafkaProducer,
+			S3:        repository.NewS3Service(awsSession),
 			API:       api,
 			Parser:    p,
 			Fetcher:   f,

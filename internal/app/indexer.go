@@ -12,6 +12,8 @@ type IndexerConfig struct {
 
 	PRODUCER infra.KafkaSyncProducer
 
+	S3 repository.S3Service
+
 	API ton.APIClientWrapped
 
 	Fetcher FetcherService

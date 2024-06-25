@@ -3,11 +3,11 @@ package block
 import (
 	"context"
 	"database/sql"
-	"github.com/getnimbus/anton/internal/conf"
 
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 
+	"github.com/getnimbus/anton/internal/conf"
 	"github.com/getnimbus/anton/internal/core"
 	"github.com/getnimbus/anton/internal/core/repository"
 	"github.com/getnimbus/anton/internal/infra"
@@ -90,8 +90,10 @@ func (r *Repository) AddBlocks(ctx context.Context, tx bun.Tx, info []*core.Bloc
 		if err != nil {
 			return err
 		}
-		if err = r.kafkaProducer.SendJson(ctx, conf.Config.TonBlocksTopic, b); err != nil {
-			return err
+		if conf.Config.IsRealtime() {
+			if err = r.kafkaProducer.SendJson(ctx, conf.Config.TonBlocksTopic, b); err != nil {
+				return err
+			}
 		}
 	}
 

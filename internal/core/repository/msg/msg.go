@@ -3,7 +3,6 @@ package msg
 import (
 	"context"
 	"database/sql"
-	"github.com/getnimbus/anton/internal/conf"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/getnimbus/anton/abi"
 	"github.com/getnimbus/anton/addr"
+	"github.com/getnimbus/anton/internal/conf"
 	"github.com/getnimbus/anton/internal/core"
 	"github.com/getnimbus/anton/internal/core/repository"
 	"github.com/getnimbus/anton/internal/infra"
@@ -209,8 +209,10 @@ func (r *Repository) AddMessages(ctx context.Context, tx bun.Tx, messages []*cor
 		//	return err
 		//}
 
-		if err := r.kafkaProducer.SendJson(ctx, conf.Config.TonMessagesTopic, msg); err != nil {
-			return err
+		if conf.Config.IsRealtime() {
+			if err := r.kafkaProducer.SendJson(ctx, conf.Config.TonMessagesTopic, msg); err != nil {
+				return err
+			}
 		}
 	}
 

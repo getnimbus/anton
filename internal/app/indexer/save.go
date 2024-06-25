@@ -1,17 +1,22 @@
 package indexer
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
 
+	"github.com/alitto/pond"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/getnimbus/anton/addr"
 	"github.com/getnimbus/anton/internal/app"
+	"github.com/getnimbus/anton/internal/conf"
 	"github.com/getnimbus/anton/internal/core"
 )
 
@@ -47,40 +52,51 @@ func (s *Service) insertData(
 		}
 	}
 
-	if err := func() error {
-		defer app.TimeTrack(time.Now(), "AddAccountStates(%d)", len(acc))
-		return s.accountRepo.AddAccountStates(ctx, dbTx, acc)
-	}(); err != nil {
-		return errors.Wrap(err, "add account states")
+	eg, childCtx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		if err := func() error {
+			defer app.TimeTrack(time.Now(), "AddAccountStates(%d)", len(acc))
+			return s.accountRepo.AddAccountStates(childCtx, dbTx, acc)
+		}(); err != nil {
+			return errors.Wrap(err, "add account states")
+		}
+
+		if err := func() error {
+			defer app.TimeTrack(time.Now(), "AddMessages(%d)", len(msg))
+			sort.Slice(msg, func(i, j int) bool { return msg[i].CreatedLT < msg[j].CreatedLT })
+			return s.msgRepo.AddMessages(childCtx, dbTx, msg)
+		}(); err != nil {
+			return errors.Wrap(err, "add messages")
+		}
+
+		if err := func() error {
+			defer app.TimeTrack(time.Now(), "AddTransactions(%d)", len(tx))
+			return s.txRepo.AddTransactions(childCtx, dbTx, tx)
+		}(); err != nil {
+			return errors.Wrap(err, "add transactions")
+		}
+
+		if err := func() error {
+			defer app.TimeTrack(time.Now(), "AddBlocks(%d)", len(b))
+			return s.blockRepo.AddBlocks(childCtx, dbTx, b)
+		}(); err != nil {
+			return errors.Wrap(err, "add blocks")
+		}
+
+		if err := dbTx.Commit(); err != nil {
+			return errors.Wrap(err, "cannot commit db tx")
+		}
+		return nil
+	})
+
+	if conf.Config.IsBackfill() {
+		eg.Go(func() error {
+			return s.storeS3(childCtx, b, tx, msg)
+		})
 	}
 
-	if err := func() error {
-		defer app.TimeTrack(time.Now(), "AddMessages(%d)", len(msg))
-		sort.Slice(msg, func(i, j int) bool { return msg[i].CreatedLT < msg[j].CreatedLT })
-		return s.msgRepo.AddMessages(ctx, dbTx, msg)
-	}(); err != nil {
-		return errors.Wrap(err, "add messages")
-	}
-
-	if err := func() error {
-		defer app.TimeTrack(time.Now(), "AddTransactions(%d)", len(tx))
-		return s.txRepo.AddTransactions(ctx, dbTx, tx)
-	}(); err != nil {
-		return errors.Wrap(err, "add transactions")
-	}
-
-	if err := func() error {
-		defer app.TimeTrack(time.Now(), "AddBlocks(%d)", len(b))
-		return s.blockRepo.AddBlocks(ctx, dbTx, b)
-	}(); err != nil {
-		return errors.Wrap(err, "add blocks")
-	}
-
-	if err := dbTx.Commit(); err != nil {
-		return errors.Wrap(err, "cannot commit db tx")
-	}
-
-	return nil
+	return eg.Wait()
 }
 
 func (s *Service) uniqAccounts(transactions []*core.Transaction) []*core.AccountState {
@@ -277,4 +293,147 @@ func (s *Service) saveBlocksLoop(results <-chan *core.Block) {
 
 		s.saveBlock(context.Background(), b)
 	}
+}
+
+func (s *Service) storeS3(
+	ctx context.Context,
+	blocks []*core.Block,
+	txs []*core.Transaction,
+	msgs []*core.Message,
+) error {
+	log.Info().Msg("start goroutine store s3...")
+
+	pool := pond.New(10, 0, pond.MinWorkers(3))
+	defer pool.StopAndWait()
+
+	// store blocks to S3
+	pool.Submit(func() {
+		if len(blocks) == 0 {
+			return
+		}
+
+		errCh := make(chan error, 1)
+		defer close(errCh)
+
+		pw := s.S3.FileStreamWriter(ctx, conf.Config.AwsBucket, fmt.Sprintf("blocks/ton-blocks/datekey=%v/%v.json.gz", blocks[0].DateKey, blocks[0].PartitionKey()), errCh)
+		zw, err := gzip.NewWriterLevel(pw, gzip.BestSpeed)
+		if err != nil {
+			log.Error().Msg(fmt.Sprintf("failed to create gzip writer: %v", err))
+			return
+		}
+
+		// add data to gzip
+		for _, block := range blocks {
+			data, err := json.Marshal(block)
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("failed to marshal block: %v", err))
+				return
+			}
+			_, err = zw.Write(data)
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("failed to write block to S3: %v", err))
+				return
+			}
+			zw.Write([]byte("\n"))
+		}
+
+		// flush data to S3
+		zw.Close()
+		pw.Close()
+
+		returnErr := <-errCh
+		if returnErr != nil {
+			log.Error().Msg(fmt.Sprintf("failed to store block to S3: %v", err))
+			return
+		}
+		log.Info().Msg(fmt.Sprintf("[%v] submit blocks %v to S3 success", blocks[0].DateKey, blocks[0].PartitionKey()))
+	})
+
+	// store transactions to S3
+	pool.Submit(func() {
+		if len(txs) == 0 {
+			return
+		}
+
+		errCh := make(chan error, 1)
+		defer close(errCh)
+
+		pw := s.S3.FileStreamWriter(ctx, conf.Config.AwsBucket, fmt.Sprintf("txs/ton-txs/datekey=%v/%v.json.gz", txs[0].DateKey, txs[0].BlockSeqNo), errCh)
+		zw, err := gzip.NewWriterLevel(pw, gzip.BestSpeed)
+		if err != nil {
+			log.Error().Msg(fmt.Sprintf("failed to create gzip writer: %v", err))
+			return
+		}
+
+		// add data to gzip
+		for _, tx := range txs {
+			data, err := json.Marshal(tx)
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("failed to marshal tx: %v", err))
+				return
+			}
+			_, err = zw.Write(data)
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("failed to write tx to S3: %v", err))
+				return
+			}
+			zw.Write([]byte("\n"))
+		}
+
+		// flush data to S3
+		zw.Close()
+		pw.Close()
+
+		returnErr := <-errCh
+		if returnErr != nil {
+			log.Error().Msg(fmt.Sprintf("failed to store tx to S3: %v", err))
+			return
+		}
+		log.Info().Msg(fmt.Sprintf("[%v] submit txs in checkpoint %v to S3 success", txs[0].DateKey, txs[0].BlockSeqNo))
+	})
+
+	// store messages to S3
+	pool.Submit(func() {
+		if len(msgs) == 0 {
+			return
+		}
+
+		errCh := make(chan error, 1)
+		defer close(errCh)
+
+		pw := s.S3.FileStreamWriter(ctx, conf.Config.AwsBucket, fmt.Sprintf("messages/ton-messages/datekey=%v/%v.json.gz", msgs[0].DateKey, msgs[0].PartitionKey()), errCh)
+		zw, err := gzip.NewWriterLevel(pw, gzip.BestSpeed)
+		if err != nil {
+			log.Error().Msg(fmt.Sprintf("failed to create gzip writer: %v", err))
+			return
+		}
+
+		// add data to gzip
+		for _, msg := range msgs {
+			data, err := json.Marshal(msg)
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("failed to marshal msg: %v", err))
+				return
+			}
+			_, err = zw.Write(data)
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("failed to write msg to S3: %v", err))
+				return
+			}
+			zw.Write([]byte("\n"))
+		}
+
+		// flush data to S3
+		zw.Close()
+		pw.Close()
+
+		returnErr := <-errCh
+		if returnErr != nil {
+			log.Error().Msg(fmt.Sprintf("failed to store msg to S3: %v", err))
+			return
+		}
+		log.Info().Msg(fmt.Sprintf("[%v] submit msgs in checkpoint %v to S3 success", msgs[0].DateKey, msgs[0].PartitionKey()))
+	})
+
+	return nil
 }
