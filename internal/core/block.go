@@ -10,6 +10,11 @@ import (
 	"github.com/xssnick/tonutils-go/ton"
 )
 
+const (
+	BlockSyncType_REALTIME int = 0
+	BlockSyncType_BACKFILL int = 1
+)
+
 type BlockID struct {
 	Workchain int32  `json:"workchain"`
 	Shard     int64  `json:"shard"`
@@ -49,6 +54,7 @@ type Block struct {
 	ScannedAt   time.Time `bun:"type:timestamp without time zone,notnull" json:"scanned_at"`
 	DateKey     string    `ch:"-" bun:"-" json:"date_key"`
 	TimestampMs string    `ch:"-" bun:"-" json:"timestamp_ms"`
+	SyncType    int       `ch:"-" bun:"type:integer" json:"-"`
 }
 
 func (b *Block) ID() BlockID {

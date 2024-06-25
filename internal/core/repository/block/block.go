@@ -86,6 +86,9 @@ func (r *Repository) AddBlocks(ctx context.Context, tx bun.Tx, info []*core.Bloc
 		return nil
 	}
 	for _, b := range info {
+		if conf.Config.IsBackfill() {
+			b.SyncType = core.BlockSyncType_BACKFILL
+		}
 		_, err := tx.NewInsert().Model(b).Exec(ctx)
 		if err != nil {
 			return err
@@ -110,11 +113,17 @@ func (r *Repository) AddBlocks(ctx context.Context, tx bun.Tx, info []*core.Bloc
 func (r *Repository) GetLastMasterBlock(ctx context.Context) (*core.Block, error) {
 	ret := new(core.Block)
 
-	err := r.pg.NewSelect().Model(ret).
+	q := r.pg.NewSelect().Model(ret).
 		Where("workchain = ?", -1).
 		Order("seq_no DESC").
-		Limit(1).
-		Scan(ctx)
+		Limit(1)
+	if conf.Config.IsBackfill() {
+		q = q.Where("sync_type = ?", core.BlockSyncType_BACKFILL)
+	} else {
+		q = q.Where("sync_type = ?", core.BlockSyncType_REALTIME)
+	}
+
+	err := q.Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, core.ErrNotFound
 	}
