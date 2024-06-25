@@ -261,7 +261,9 @@ func (s *Service) saveBlock(ctx context.Context, master *core.Block) {
 	}
 
 	if err := s.insertData(ctx, s.uniqAccounts(newTransactions), s.uniqMessages(ctx, newTransactions), newTransactions, newBlocks); err != nil {
-		panic(err)
+		//panic(err)
+		log.Error().Err(err).Msg("failed to insert data")
+		return
 	}
 
 	lvl := log.Debug()

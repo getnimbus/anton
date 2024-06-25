@@ -3,7 +3,6 @@ package parser
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"math/big"
 	"sort"
 
@@ -91,11 +90,14 @@ func (s *Service) emulateGetMethodNoArgs(ctx context.Context, i *core.ContractIn
 	gm := getMethodByName(i, gmName)
 	if gm == nil {
 		// we panic as contract interface was defined, but there are no standard get-method
-		panic(fmt.Errorf("%s `%s` get-method was not found", i.Name, gmName))
+		//panic(fmt.Errorf("%s `%s` get-method was not found", i.Name, gmName))
+		return ret, errors.Wrapf(app.ErrImpossibleParsing, "%s `%s` get-method was not found", i.Name, gmName)
+
 	}
 	if len(gm.Arguments) != 0 {
 		// we panic as get-method has the wrong description and dev must fix this bug
-		panic(fmt.Errorf("%s `%s` get-method has arguments", i.Name, gmName))
+		//panic(fmt.Errorf("%s `%s` get-method has arguments", i.Name, gmName))
+		return ret, errors.Wrapf(app.ErrImpossibleParsing, "%s `%s` get-method has arguments", i.Name, gmName)
 	}
 
 	stack, err := s.emulateGetMethod(ctx, gm, acc, nil)
@@ -152,7 +154,9 @@ func mapContentDataNFT(ret *core.AccountState, c any) {
 func (s *Service) getNFTItemContent(ctx context.Context, collection *core.AccountState, idx *big.Int, itemContent *cell.Cell, acc *core.AccountState) {
 	desc, err := s.ContractRepo.GetMethodDescription(ctx, known.NFTCollection, "get_nft_content")
 	if err != nil {
-		panic("get 'get_nft_content' method description")
+		//panic("get 'get_nft_content' method description")
+		log.Error().Err(err).Msg("get 'get_nft_content' method description")
+		return
 	}
 
 	args := []any{idx.Bytes(), itemContent}
@@ -199,7 +203,9 @@ func (s *Service) checkMinter(ctx context.Context, minter, item *core.AccountSta
 func (s *Service) checkNFTMinter(ctx context.Context, minter *core.AccountState, idx *big.Int, item *core.AccountState) {
 	desc, err := s.ContractRepo.GetMethodDescription(ctx, known.NFTCollection, "get_nft_address_by_index")
 	if err != nil {
-		panic("get 'get_nft_address_by_index' method description")
+		//panic("get 'get_nft_address_by_index' method description")
+		log.Error().Err(err).Msg("get 'get_nft_address_by_index' method description")
+		return
 	}
 
 	args := []any{idx.Bytes()}
@@ -210,7 +216,9 @@ func (s *Service) checkNFTMinter(ctx context.Context, minter *core.AccountState,
 func (s *Service) checkJettonMinter(ctx context.Context, minter *core.AccountState, ownerAddr *addr.Address, walletAcc *core.AccountState) {
 	desc, err := s.ContractRepo.GetMethodDescription(ctx, known.JettonMinter, "get_wallet_address")
 	if err != nil {
-		panic("get 'get_wallet_address' method description")
+		//panic("get 'get_wallet_address' method description")
+		log.Error().Err(err).Msg("get 'get_wallet_address' method description")
+		return
 	}
 
 	args := []any{ownerAddr.MustToTonutils()}
@@ -236,7 +244,9 @@ func (s *Service) checkDeDustMinter(ctx context.Context, acc *core.AccountState,
 
 	desc, err := s.ContractRepo.GetMethodDescription(ctx, known.DedustV2Factory, "get_pool_address")
 	if err != nil {
-		panic("get 'get_pool_address' method description")
+		//panic("get 'get_pool_address' method description")
+		log.Error().Err(err).Msg("get 'get_pool_address' method description")
+		return
 	}
 
 	asset0 := acc.ExecutedGetMethods[known.DedustV2Pool][0].Returns[0].(*abi.DedustAsset) //nolint:forcetypeassert // that's ok
@@ -266,7 +276,9 @@ func (s *Service) checkStonFiMinter(ctx context.Context, acc *core.AccountState,
 
 	desc, err := s.ContractRepo.GetMethodDescription(ctx, known.StonFiRouter, "get_pool_address")
 	if err != nil {
-		panic("get 'get_pool_address' method description")
+		//panic("get 'get_pool_address' method description")
+		log.Error().Err(err).Msg("get 'get_pool_address' method description")
+		return
 	}
 
 	asset0 := acc.ExecutedGetMethods[known.StonFiPool][0].Returns[2].(*address.Address) //nolint:forcetypeassert // that's ok
