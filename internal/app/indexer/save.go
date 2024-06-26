@@ -84,9 +84,6 @@ func (s *Service) insertData(
 			return errors.Wrap(err, "add blocks")
 		}
 
-		if err := dbTx.Commit(); err != nil {
-			return errors.Wrap(err, "cannot commit db tx")
-		}
 		return nil
 	})
 
@@ -96,7 +93,14 @@ func (s *Service) insertData(
 		})
 	}
 
-	return eg.Wait()
+	if err := eg.Wait(); err != nil {
+		return errors.Wrap(err, "cannot insert data")
+	}
+
+	if err := dbTx.Commit(); err != nil {
+		return errors.Wrap(err, "cannot commit db tx")
+	}
+	return nil
 }
 
 func (s *Service) uniqAccounts(transactions []*core.Transaction) []*core.AccountState {

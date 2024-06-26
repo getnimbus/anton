@@ -10,17 +10,17 @@ require (
 	github.com/gin-gonic/gin v1.9.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.29.0
+	github.com/rs/zerolog v1.32.0
 	github.com/sigurn/crc16 v0.0.0-20211026045750-20ab5afb07e3
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/files v1.0.0
 	github.com/swaggo/gin-swagger v1.5.3
 	github.com/swaggo/swag v1.8.10
 	github.com/tonkeeper/tongo v1.3.0
-	github.com/uptrace/bun v1.1.12
-	github.com/uptrace/bun/dialect/pgdialect v1.1.12
-	github.com/uptrace/bun/driver/pgdriver v1.1.12
-	github.com/uptrace/bun/extra/bunbig v1.1.13-0.20230308071428-7cd855e64a02
+	github.com/uptrace/bun v1.2.1
+	github.com/uptrace/bun/dialect/pgdialect v1.2.1
+	github.com/uptrace/bun/driver/pgdriver v1.2.1
+	github.com/uptrace/bun/extra/bunbig v1.2.1
 	github.com/uptrace/go-clickhouse v0.3.1
 	github.com/urfave/cli/v2 v2.25.1
 	github.com/xssnick/tonutils-go v1.9.5
@@ -28,6 +28,7 @@ require (
 
 require (
 	github.com/IBM/sarama v1.42.1
+	github.com/alitto/pond v1.9.0
 	github.com/aws/aws-sdk-go v1.54.3
 	github.com/creasty/defaults v1.7.0
 	github.com/getnimbus/ultrago v1.0.0
@@ -36,13 +37,13 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/uber/athenadriver v1.1.15
 	github.com/xdg-go/scram v1.1.2
+	golang.org/x/sync v0.7.0
 )
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/alitto/pond v1.9.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker v27.0.0+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -97,7 +98,6 @@ require (
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gorm.io/gorm v1.25.10 // indirect
 )
@@ -125,7 +125,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
@@ -137,7 +137,7 @@ require (
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.9 // indirect
-	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
+	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opentelemetry.io/otel v1.27.0 // indirect
