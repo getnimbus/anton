@@ -28,7 +28,6 @@ require (
 
 require (
 	github.com/IBM/sarama v1.42.1
-	github.com/alitto/pond v1.9.0
 	github.com/aws/aws-sdk-go v1.54.3
 	github.com/creasty/defaults v1.7.0
 	github.com/getnimbus/ultrago v1.0.0

@@ -9,7 +9,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/alitto/pond"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
@@ -54,6 +53,12 @@ func (s *Service) insertData(
 
 	eg, childCtx := errgroup.WithContext(ctx)
 
+	if conf.Config.IsBackfill() {
+		eg.Go(func() error {
+			return s.storeS3(childCtx, b, tx, msg)
+		})
+	}
+
 	eg.Go(func() error {
 		//if err := func() error {
 		//	defer app.TimeTrack(time.Now(), "AddAccountStates(%d)", len(acc))
@@ -86,12 +91,6 @@ func (s *Service) insertData(
 
 		return nil
 	})
-
-	if conf.Config.IsBackfill() {
-		eg.Go(func() error {
-			return s.storeS3(childCtx, b, tx, msg)
-		})
-	}
 
 	if err := eg.Wait(); err != nil {
 		return errors.Wrap(err, "cannot insert data")
@@ -309,23 +308,22 @@ func (s *Service) storeS3(
 ) error {
 	log.Info().Msg("start goroutine store s3...")
 
-	pool := pond.New(10, 0, pond.MinWorkers(3))
-	defer pool.StopAndWait()
+	eg, childCtx := errgroup.WithContext(ctx)
 
 	// store blocks to S3
-	pool.Submit(func() {
+	eg.Go(func() error {
 		if len(blocks) == 0 {
-			return
+			return nil
 		}
 
 		errCh := make(chan error, 1)
 		defer close(errCh)
 
-		pw := s.S3.FileStreamWriter(ctx, conf.Config.AwsBucket, fmt.Sprintf("blocks/ton-blocks/datekey=%v/%v.json.gz", blocks[0].DateKey, blocks[0].PartitionKey()), errCh)
+		pw := s.S3.FileStreamWriter(childCtx, conf.Config.AwsBucket, fmt.Sprintf("blocks/ton-blocks/datekey=%v/%v.json.gz", blocks[0].DateKey, blocks[0].PartitionKey()), errCh)
 		zw, err := gzip.NewWriterLevel(pw, gzip.BestSpeed)
 		if err != nil {
 			log.Error().Msg(fmt.Sprintf("failed to create gzip writer: %v", err))
-			return
+			return errors.Wrap(err, "failed to create gzip writer")
 		}
 
 		// add data to gzip
@@ -333,12 +331,12 @@ func (s *Service) storeS3(
 			data, err := json.Marshal(block)
 			if err != nil {
 				log.Error().Msg(fmt.Sprintf("failed to marshal block: %v", err))
-				return
+				return errors.Wrap(err, "failed to marshal block")
 			}
 			_, err = zw.Write(data)
 			if err != nil {
 				log.Error().Msg(fmt.Sprintf("failed to write block to S3: %v", err))
-				return
+				return errors.Wrap(err, "failed to write block to S3")
 			}
 			zw.Write([]byte("\n"))
 		}
@@ -350,25 +348,26 @@ func (s *Service) storeS3(
 		returnErr := <-errCh
 		if returnErr != nil {
 			log.Error().Msg(fmt.Sprintf("failed to store block to S3: %v", err))
-			return
+			return errors.Wrap(err, "failed to store block to S3")
 		}
 		log.Info().Msg(fmt.Sprintf("[%v] submit blocks %v to S3 success", blocks[0].DateKey, blocks[0].PartitionKey()))
+		return nil
 	})
 
 	// store transactions to S3
-	pool.Submit(func() {
+	eg.Go(func() error {
 		if len(txs) == 0 {
-			return
+			return nil
 		}
 
 		errCh := make(chan error, 1)
 		defer close(errCh)
 
-		pw := s.S3.FileStreamWriter(ctx, conf.Config.AwsBucket, fmt.Sprintf("txs/ton-txs/datekey=%v/%v.json.gz", txs[0].DateKey, txs[0].BlockSeqNo), errCh)
+		pw := s.S3.FileStreamWriter(childCtx, conf.Config.AwsBucket, fmt.Sprintf("txs/ton-txs/datekey=%v/%v.json.gz", txs[0].DateKey, txs[0].BlockSeqNo), errCh)
 		zw, err := gzip.NewWriterLevel(pw, gzip.BestSpeed)
 		if err != nil {
 			log.Error().Msg(fmt.Sprintf("failed to create gzip writer: %v", err))
-			return
+			return errors.Wrap(err, "failed to create gzip writer")
 		}
 
 		// add data to gzip
@@ -376,12 +375,12 @@ func (s *Service) storeS3(
 			data, err := json.Marshal(tx)
 			if err != nil {
 				log.Error().Msg(fmt.Sprintf("failed to marshal tx: %v", err))
-				return
+				return errors.Wrap(err, "failed to marshal tx")
 			}
 			_, err = zw.Write(data)
 			if err != nil {
 				log.Error().Msg(fmt.Sprintf("failed to write tx to S3: %v", err))
-				return
+				return errors.Wrap(err, "failed to write tx to S3")
 			}
 			zw.Write([]byte("\n"))
 		}
@@ -393,25 +392,26 @@ func (s *Service) storeS3(
 		returnErr := <-errCh
 		if returnErr != nil {
 			log.Error().Msg(fmt.Sprintf("failed to store tx to S3: %v", err))
-			return
+			return errors.Wrap(err, "failed to store tx to S3")
 		}
 		log.Info().Msg(fmt.Sprintf("[%v] submit txs in checkpoint %v to S3 success", txs[0].DateKey, txs[0].BlockSeqNo))
+		return nil
 	})
 
 	// store messages to S3
-	pool.Submit(func() {
+	eg.Go(func() error {
 		if len(msgs) == 0 {
-			return
+			return nil
 		}
 
 		errCh := make(chan error, 1)
 		defer close(errCh)
 
-		pw := s.S3.FileStreamWriter(ctx, conf.Config.AwsBucket, fmt.Sprintf("messages/ton-messages/datekey=%v/%v.json.gz", msgs[0].DateKey, msgs[0].PartitionKey()), errCh)
+		pw := s.S3.FileStreamWriter(childCtx, conf.Config.AwsBucket, fmt.Sprintf("messages/ton-messages/datekey=%v/%v.json.gz", msgs[0].DateKey, msgs[0].PartitionKey()), errCh)
 		zw, err := gzip.NewWriterLevel(pw, gzip.BestSpeed)
 		if err != nil {
 			log.Error().Msg(fmt.Sprintf("failed to create gzip writer: %v", err))
-			return
+			return errors.Wrap(err, "failed to create gzip writer")
 		}
 
 		// add data to gzip
@@ -419,12 +419,12 @@ func (s *Service) storeS3(
 			data, err := json.Marshal(msg)
 			if err != nil {
 				log.Error().Msg(fmt.Sprintf("failed to marshal msg: %v", err))
-				return
+				return errors.Wrap(err, "failed to marshal msg")
 			}
 			_, err = zw.Write(data)
 			if err != nil {
 				log.Error().Msg(fmt.Sprintf("failed to write msg to S3: %v", err))
-				return
+				return errors.Wrap(err, "failed to write msg to S3")
 			}
 			zw.Write([]byte("\n"))
 		}
@@ -436,10 +436,11 @@ func (s *Service) storeS3(
 		returnErr := <-errCh
 		if returnErr != nil {
 			log.Error().Msg(fmt.Sprintf("failed to store msg to S3: %v", err))
-			return
+			return errors.Wrap(err, "failed to store msg to S3")
 		}
 		log.Info().Msg(fmt.Sprintf("[%v] submit msgs in checkpoint %v to S3 success", msgs[0].DateKey, msgs[0].PartitionKey()))
+		return nil
 	})
 
-	return nil
+	return eg.Wait()
 }
