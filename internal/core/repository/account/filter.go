@@ -297,7 +297,7 @@ func (r *Repository) getCodeData(ctx context.Context, rows []*core.AccountState,
 func (r *Repository) FilterAccounts(ctx context.Context, f *filter.AccountsReq) (*filter.AccountsRes, error) {
 	var (
 		res = new(filter.AccountsRes)
-		err error
+		//err error
 	)
 
 	if f.Limit == 0 {
@@ -312,10 +312,10 @@ func (r *Repository) FilterAccounts(ctx context.Context, f *filter.AccountsReq) 
 	//	return res, nil
 	//}
 
-	res.Rows, err = r.filterAccountStates(ctx, f, res.Total)
-	if err != nil {
-		return res, err
-	}
+	//res.Rows, err = r.filterAccountStates(ctx, f, res.Total)
+	//if err != nil {
+	//	return res, err
+	//}
 
 	var excludeCode, excludeData bool
 	for _, c := range f.ExcludeColumn {

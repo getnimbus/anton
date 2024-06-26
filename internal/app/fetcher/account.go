@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"github.com/xssnick/tonutils-go/ton"
 	"github.com/xssnick/tonutils-go/tvm/cell"
 
@@ -48,15 +47,15 @@ func (s *Service) makeGetOtherAccountFunc(master, b *ton.BlockIDExt, lastLT uint
 		}
 
 		// second attempt is to look for the latest account state in the database
-		acc, err := s.getLastSeenAccountState(ctx, a, lastLT)
-		if err == nil {
-			return acc, nil
-		}
-		lvl := log.Warn()
-		if errors.Is(err, core.ErrNotFound) || errors.Is(err, core.ErrInvalidArg) {
-			lvl = log.Debug()
-		}
-		lvl.Err(err).Str("addr", a.Base64()).Msg("get latest other account state")
+		//acc, err := s.getLastSeenAccountState(ctx, a, lastLT)
+		//if err == nil {
+		//	return acc, nil
+		//}
+		//lvl := log.Warn()
+		//if errors.Is(err, core.ErrNotFound) || errors.Is(err, core.ErrInvalidArg) {
+		//	lvl = log.Debug()
+		//}
+		//lvl.Err(err).Str("addr", a.Base64()).Msg("get latest other account state")
 
 		// third attempt is to get needed contract state from the node
 		raw, err := s.API.GetAccount(ctx, master, a.MustToTonutils())

@@ -55,12 +55,12 @@ func (s *Service) insertData(
 	eg, childCtx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		if err := func() error {
-			defer app.TimeTrack(time.Now(), "AddAccountStates(%d)", len(acc))
-			return s.accountRepo.AddAccountStates(childCtx, dbTx, acc)
-		}(); err != nil {
-			return errors.Wrap(err, "add account states")
-		}
+		//if err := func() error {
+		//	defer app.TimeTrack(time.Now(), "AddAccountStates(%d)", len(acc))
+		//	return s.accountRepo.AddAccountStates(childCtx, dbTx, acc)
+		//}(); err != nil {
+		//	return errors.Wrap(err, "add account states")
+		//}
 
 		if err := func() error {
 			defer app.TimeTrack(time.Now(), "AddMessages(%d)", len(msg))
@@ -211,11 +211,11 @@ func (s *Service) uniqMessages(ctx context.Context, transactions []*core.Transac
 	}
 
 	for _, msg := range uniqMsg {
-		if msg.Type == core.Internal && (msg.SrcTxLT == 0 && msg.DstTxLT != 0) {
-			if s.getMessageSource(ctx, msg) {
-				continue
-			}
-		}
+		//if msg.Type == core.Internal && (msg.SrcTxLT == 0 && msg.DstTxLT != 0) {
+		//	if s.getMessageSource(ctx, msg) {
+		//		continue
+		//	}
+		//}
 
 		msg = msg.WithDateKey()
 		if len(msg.Hash) > 0 {
